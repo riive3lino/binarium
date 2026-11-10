@@ -1,1 +1,1351 @@
-loadstring(game:HttpGet("https://api.obscuravm.com/scripts/6484082588132096676"))()
+--[[
+    Binarium v1.3.3
+    TCs + VEF | reach por posicao, NoCD, reach visual, temas
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+
+local lp = Players.LocalPlayer
+local VERSION = "v1.3.3"
+
+-- ========== CONFIG ==========
+local FILE = "Binarium2.json"
+local PROFILES = { "Atacante", "Zagueiro", "Goleiro" }
+local DEFAULT_REACHES = { Atacante = 5.3, Zagueiro = 5, Goleiro = 4.8 }
+
+local cfg = {
+    reaches = { Atacante = 5.3, Zagueiro = 5, Goleiro = 4.8 },
+    profile = "Atacante",
+    visual = false,
+    visualAlpha = 0.85,
+    theme = 1,
+    key = "RightShift",
+    showOrb = nil,
+    panelPos = nil,
+    orbPos = nil,
+}
+
+local function curReach()
+    return cfg.reaches[cfg.profile]
+end
+
+local function readPos(t)
+    if type(t) == "table" and #t == 4 then
+        for i = 1, 4 do
+            if type(t[i]) ~= "number" then return nil end
+        end
+        return t
+    end
+    return nil
+end
+
+pcall(function()
+    if isfile and isfile(FILE) then
+        local d = HttpService:JSONDecode(readfile(FILE))
+        if type(d.reaches) == "table" then
+            for _, n in ipairs(PROFILES) do
+                if type(d.reaches[n]) == "number" then
+                    cfg.reaches[n] = math.clamp(math.floor(d.reaches[n] * 10 + 0.5) / 10, 0.5, 100)
+                end
+            end
+        end
+        if table.find(PROFILES, d.profile) then cfg.profile = d.profile end
+        if type(d.visual) == "boolean" then cfg.visual = d.visual end
+        if type(d.visualAlpha) == "number" then cfg.visualAlpha = math.clamp(d.visualAlpha, 0.5, 0.95) end
+        if type(d.theme) == "number" then cfg.theme = math.clamp(math.floor(d.theme), 1, 4) end
+        if type(d.key) == "string" and pcall(function() return Enum.KeyCode[d.key] end) then
+            cfg.key = d.key
+        end
+        if type(d.showOrb) == "boolean" then cfg.showOrb = d.showOrb end
+        cfg.panelPos = readPos(d.panelPos)
+        cfg.orbPos = readPos(d.orbPos)
+    end
+end)
+
+-- sem teclado (celular), a bolinha continua ligada para nao perder o painel
+if cfg.showOrb == nil then
+    cfg.showOrb = not UserInputService.KeyboardEnabled
+end
+
+local function save()
+    pcall(function()
+        if writefile then writefile(FILE, HttpService:JSONEncode(cfg)) end
+    end)
+end
+
+local saveToken = 0
+local function saveSoon()
+    saveToken = saveToken + 1
+    local my = saveToken
+    task.delay(0.5, function()
+        if my == saveToken then save() end
+    end)
+end
+
+-- ========== JOGOS SUPORTADOS ==========
+-- cada jogo devolve TODAS as bolas (cada bola nova que nasce conta)
+local function partOf(inst)
+    if inst:IsA("BasePart") then return inst end
+    if inst:IsA("Model") and inst.PrimaryPart then return inst.PrimaryPart end
+    return inst:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local vefCache, vefScan = {}, 0
+
+local GAMES = {
+    {
+        name = "TCs",
+        getAll = function()
+            local list = {}
+            for _, c in ipairs(workspace:GetChildren()) do
+                if c.Name == "TPS" then
+                    local p = partOf(c)
+                    if p then table.insert(list, p) end
+                end
+            end
+            return list
+        end,
+    },
+    {
+        name = "VEF",
+        getAll = function()
+            local list, seen = {}, {}
+
+            local pitch = workspace:FindFirstChild("Pitch")
+            local balls = pitch and pitch:FindFirstChild("Balls")
+            if balls then
+                for _, c in ipairs(balls:GetChildren()) do
+                    local p = partOf(c)
+                    if p and not seen[p] then
+                        seen[p] = true
+                        table.insert(list, p)
+                    end
+                end
+            end
+
+            -- bolas fora do caminho esperado: procura partes chamadas VEF (a cada 2s)
+            if tick() - vefScan > 2 then
+                vefScan = tick()
+                vefCache = {}
+                for _, d in ipairs(workspace:GetDescendants()) do
+                    if d.Name == "VEF" and d:IsA("BasePart") then
+                        table.insert(vefCache, d)
+                    end
+                end
+            end
+            for _, d in ipairs(vefCache) do
+                if d.Parent and not seen[d] then
+                    seen[d] = true
+                    table.insert(list, d)
+                end
+            end
+
+            return list
+        end,
+    },
+}
+
+local ballList, ballGame, lastScan = {}, nil, 0
+
+local function getBalls()
+    if tick() - lastScan > 0.15 then
+        lastScan = tick()
+        ballList, ballGame = {}, nil
+        for _, g in ipairs(GAMES) do
+            local list = g.getAll()
+            if #list > 0 then
+                ballList, ballGame = list, g.name
+                break
+            end
+        end
+    end
+    return ballList, ballGame
+end
+
+-- ========== HELPERS ==========
+local function getParent()
+    local ok, p = pcall(function()
+        return (gethui and gethui()) or game:GetService("CoreGui")
+    end)
+    if ok and p then return p end
+    return lp:WaitForChild("PlayerGui")
+end
+
+local parent = getParent()
+local old = parent:FindFirstChild("Binarium")
+if old then old:Destroy() end
+local oldVisual = workspace:FindFirstChild("BinariumVisual")
+if oldVisual then oldVisual:Destroy() end
+
+local function new(class, props, par)
+    local o = Instance.new(class)
+    for k, v in pairs(props) do o[k] = v end
+    if par then o.Parent = par end
+    return o
+end
+
+local function corner(o, r)
+    return new("UICorner", { CornerRadius = UDim.new(0, r) }, o)
+end
+
+local function tween(o, props, t)
+    local tw = TweenService:Create(o, TweenInfo.new(t or 0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props)
+    tw:Play()
+    return tw
+end
+
+local BLACK = Color3.fromRGB(0, 0, 0)
+local BG = Color3.fromRGB(11, 11, 14)
+local CARD = Color3.fromRGB(21, 21, 26)
+local CARD2 = Color3.fromRGB(38, 38, 46)
+local WHITE = Color3.fromRGB(255, 255, 255)
+local TEXT = Color3.fromRGB(242, 242, 248)
+local MUTED = Color3.fromRGB(130, 130, 148)
+local DIM = Color3.fromRGB(85, 85, 98)
+local GREEN = Color3.fromRGB(70, 200, 120)
+local RED = Color3.fromRGB(230, 80, 80)
+
+-- temas: nome, cor de destaque, cor do texto sobre o destaque
+local THEMES = {
+    { "Mono", Color3.fromRGB(255, 255, 255), BLACK },
+    { "Roxo", Color3.fromRGB(124, 108, 255), WHITE },
+    { "Azul", Color3.fromRGB(80, 150, 255), WHITE },
+    { "Verde", Color3.fromRGB(70, 200, 120), BLACK },
+}
+
+local accent, onAccent = THEMES[cfg.theme][2], THEMES[cfg.theme][3]
+local themed = {}
+
+local function onTheme(fn)
+    table.insert(themed, fn)
+    fn()
+end
+
+local conns = {}
+
+local gui = new("ScreenGui", {
+    Name = "Binarium",
+    ResetOnSpawn = false,
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+})
+local okParent = pcall(function() gui.Parent = parent end)
+if not okParent then gui.Parent = lp:WaitForChild("PlayerGui") end
+
+local function isPress(i)
+    return i.UserInputType == Enum.UserInputType.MouseButton1
+        or i.UserInputType == Enum.UserInputType.Touch
+end
+
+-- um "ponteiro" ativo: so o toque/clique que comecou no elemento conta
+local function isSamePointer(active, i, ending)
+    if active.UserInputType == Enum.UserInputType.Touch then
+        return i == active
+    end
+    if ending then
+        return i.UserInputType == Enum.UserInputType.MouseButton1
+    end
+    return i.UserInputType == Enum.UserInputType.MouseMovement
+end
+
+-- arrastar
+local function makeDraggable(target, handle, onTap, onMoved)
+    local active, startInput, startPos, moved = nil, nil, nil, false
+
+    handle.InputBegan:Connect(function(i)
+        if active or not isPress(i) then return end
+        active = i
+        startInput = i.Position
+        startPos = target.Position
+        moved = false
+    end)
+
+    table.insert(conns, UserInputService.InputChanged:Connect(function(i)
+        if not active or not isSamePointer(active, i, false) then return end
+        local d = i.Position - startInput
+        if d.Magnitude > 6 then moved = true end
+        if moved then
+            target.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + d.X,
+                startPos.Y.Scale, startPos.Y.Offset + d.Y
+            )
+        end
+    end))
+
+    table.insert(conns, UserInputService.InputEnded:Connect(function(i)
+        if not active or not isSamePointer(active, i, true) then return end
+        active = nil
+        if moved then
+            if onMoved then onMoved() end
+        elseif onTap then
+            onTap()
+        end
+    end))
+end
+
+local function posToTable(p)
+    return { p.X.Scale, p.X.Offset, p.Y.Scale, p.Y.Offset }
+end
+
+local function tableToPos(t)
+    return UDim2.new(t[1], t[2], t[3], t[4])
+end
+
+-- botao que repete enquanto segura
+local function holdButton(btn, fn)
+    local token, active = 0, nil
+
+    btn.InputBegan:Connect(function(i)
+        if not isPress(i) then return end
+        active = i
+        token = token + 1
+        local my = token
+        tween(btn, { BackgroundColor3 = accent, TextColor3 = onAccent }, 0.08)
+        fn()
+        task.spawn(function()
+            task.wait(0.4)
+            while token == my do
+                fn()
+                task.wait(0.07)
+            end
+        end)
+    end)
+
+    table.insert(conns, UserInputService.InputEnded:Connect(function(i)
+        if not active or not isSamePointer(active, i, true) then return end
+        active = nil
+        token = token + 1
+        tween(btn, { BackgroundColor3 = CARD2, TextColor3 = TEXT }, 0.15)
+    end))
+end
+
+-- slider generico
+local function makeSlider(par, pos, size, vmin, vmax, onChange)
+    local hit = new("TextButton", {
+        Size = size,
+        Position = pos,
+        BackgroundTransparency = 1,
+        Text = "",
+        AutoButtonColor = false,
+    }, par)
+
+    local track = new("Frame", {
+        Size = UDim2.new(1, 0, 0, 4),
+        Position = UDim2.new(0, 0, 0.5, -2),
+        BackgroundColor3 = CARD2,
+        BorderSizePixel = 0,
+    }, hit)
+    corner(track, 2)
+
+    local fill = new("Frame", {
+        Size = UDim2.new(0, 0, 1, 0),
+        BackgroundColor3 = accent,
+        BorderSizePixel = 0,
+    }, track)
+    corner(fill, 2)
+
+    local knob = new("Frame", {
+        Size = UDim2.fromOffset(14, 14),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0, 0, 0.5, 0),
+        BackgroundColor3 = accent,
+        BorderSizePixel = 0,
+    }, track)
+    corner(knob, 7)
+
+    onTheme(function()
+        fill.BackgroundColor3 = accent
+        knob.BackgroundColor3 = accent
+    end)
+
+    local function slide(x)
+        local w = track.AbsoluteSize.X
+        if w <= 0 then return end
+        local r = math.clamp((x - track.AbsolutePosition.X) / w, 0, 1)
+        onChange(vmin + r * (vmax - vmin))
+    end
+
+    local active = nil
+
+    hit.InputBegan:Connect(function(i)
+        if not isPress(i) then return end
+        active = i
+        slide(i.Position.X)
+    end)
+
+    table.insert(conns, UserInputService.InputChanged:Connect(function(i)
+        if active and isSamePointer(active, i, false) then
+            slide(i.Position.X)
+        end
+    end))
+
+    table.insert(conns, UserInputService.InputEnded:Connect(function(i)
+        if active and isSamePointer(active, i, true) then
+            active = nil
+        end
+    end))
+
+    local api = {}
+    function api.setValue(v)
+        local r = math.clamp((v - vmin) / (vmax - vmin), 0, 1)
+        fill.Size = UDim2.new(r, 0, 1, 0)
+        knob.Position = UDim2.new(r, 0, 0.5, 0)
+    end
+    return api
+end
+
+-- ========== JANELA ==========
+local PANEL_W, PANEL_H = 280, 350
+local HEADER_H, TAB_H = 54, 32
+local TOP = HEADER_H + TAB_H
+
+local root = new("Frame", {
+    Size = UDim2.fromOffset(PANEL_W, PANEL_H),
+    Position = cfg.panelPos and tableToPos(cfg.panelPos) or UDim2.new(0.5, -PANEL_W / 2, 0.2, 0),
+    BackgroundTransparency = 1,
+}, gui)
+local rootScale = new("UIScale", { Scale = 1 }, root)
+
+local shadow = new("Frame", {
+    Size = UDim2.new(1, 16, 1, 18),
+    Position = UDim2.fromOffset(-8, -4),
+    BackgroundColor3 = BLACK,
+    BackgroundTransparency = 0.55,
+    BorderSizePixel = 0,
+    ZIndex = 0,
+}, root)
+corner(shadow, 22)
+
+local panel = new("Frame", {
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundColor3 = BG,
+    BorderSizePixel = 0,
+    ClipsDescendants = true,
+    Active = true,
+    ZIndex = 1,
+}, root)
+corner(panel, 16)
+
+local panelStroke = new("UIStroke", { Color = accent, Thickness = 1, Transparency = 0.7 }, panel)
+onTheme(function() panelStroke.Color = accent end)
+
+-- cabecalho
+local header = new("Frame", {
+    Size = UDim2.new(1, 0, 0, HEADER_H),
+    BackgroundColor3 = Color3.fromRGB(16, 16, 20),
+    BorderSizePixel = 0,
+}, panel)
+
+new("UIGradient", {
+    Color = ColorSequence.new(Color3.fromRGB(26, 26, 32), Color3.fromRGB(14, 14, 18)),
+    Rotation = 90,
+}, header)
+
+local logo = new("TextLabel", {
+    Size = UDim2.fromOffset(32, 32),
+    Position = UDim2.fromOffset(14, 11),
+    BackgroundColor3 = accent,
+    Text = "B",
+    Font = Enum.Font.GothamBold,
+    TextSize = 18,
+    TextColor3 = onAccent,
+    BorderSizePixel = 0,
+}, header)
+corner(logo, 10)
+onTheme(function()
+    logo.BackgroundColor3 = accent
+    logo.TextColor3 = onAccent
+end)
+
+new("TextLabel", {
+    Size = UDim2.new(1, -150, 0, 18),
+    Position = UDim2.fromOffset(56, 10),
+    BackgroundTransparency = 1,
+    Text = "Binarium",
+    Font = Enum.Font.GothamBold,
+    TextSize = 15,
+    TextColor3 = WHITE,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, header)
+
+local statusDot = new("Frame", {
+    Size = UDim2.fromOffset(7, 7),
+    Position = UDim2.fromOffset(57, 34),
+    BackgroundColor3 = DIM,
+    BorderSizePixel = 0,
+}, header)
+corner(statusDot, 4)
+
+local statusLabel = new("TextLabel", {
+    Size = UDim2.new(1, -150, 0, 14),
+    Position = UDim2.fromOffset(70, 30),
+    BackgroundTransparency = 1,
+    Text = "Aguardando bola",
+    Font = Enum.Font.Gotham,
+    TextSize = 11,
+    TextColor3 = MUTED,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, header)
+
+local statusOk = false
+local function setStatus(text, color, ok)
+    statusLabel.Text = text
+    statusDot.BackgroundColor3 = color
+    statusOk = ok
+end
+
+local function headerBtn(text, x)
+    local b = new("TextButton", {
+        Size = UDim2.fromOffset(28, 28),
+        Position = UDim2.new(1, x, 0.5, -14),
+        BackgroundColor3 = CARD2,
+        Text = text,
+        Font = Enum.Font.GothamBold,
+        TextSize = 15,
+        TextColor3 = TEXT,
+        AutoButtonColor = false,
+        BorderSizePixel = 0,
+    }, header)
+    corner(b, 9)
+    return b
+end
+
+local minBtn = headerBtn("-", -74)
+local closeBtn = headerBtn("x", -40)
+
+local function persistPanel()
+    cfg.panelPos = posToTable(root.Position)
+    save()
+end
+makeDraggable(root, header, nil, persistPanel)
+
+-- abas
+local TABS = { "Reach", "Extras", "Config" }
+
+local tabBar = new("Frame", {
+    Size = UDim2.new(1, 0, 0, TAB_H),
+    Position = UDim2.fromOffset(0, HEADER_H),
+    BackgroundColor3 = BG,
+    BorderSizePixel = 0,
+}, panel)
+
+new("Frame", {
+    Size = UDim2.new(1, 0, 0, 1),
+    Position = UDim2.new(0, 0, 1, -1),
+    BackgroundColor3 = CARD2,
+    BorderSizePixel = 0,
+}, tabBar)
+
+local indicator = new("Frame", {
+    Size = UDim2.new(1 / 3, -30, 0, 3),
+    Position = UDim2.new(0, 15, 1, -3),
+    BackgroundColor3 = accent,
+    BorderSizePixel = 0,
+}, tabBar)
+corner(indicator, 2)
+onTheme(function() indicator.BackgroundColor3 = accent end)
+
+local pagesHolder = new("Frame", {
+    Size = UDim2.new(1, 0, 1, -TOP),
+    Position = UDim2.fromOffset(0, TOP),
+    BackgroundTransparency = 1,
+}, panel)
+
+local pages, tabButtons = {}, {}
+
+local function selectTab(name)
+    local idx = table.find(TABS, name) or 1
+    for _, n in ipairs(TABS) do
+        pages[n].Visible = (n == name)
+        tween(tabButtons[n], { TextColor3 = (n == name) and TEXT or MUTED })
+    end
+    tween(indicator, { Position = UDim2.new((idx - 1) / 3, 15, 1, -3) }, 0.2)
+end
+
+for i, name in ipairs(TABS) do
+    tabButtons[name] = new("TextButton", {
+        Size = UDim2.new(1 / 3, 0, 1, -3),
+        Position = UDim2.new((i - 1) / 3, 0, 0, 0),
+        BackgroundTransparency = 1,
+        Text = name,
+        Font = Enum.Font.GothamBold,
+        TextSize = 12,
+        TextColor3 = MUTED,
+        AutoButtonColor = false,
+    }, tabBar)
+    local pageProps = {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Visible = false,
+    }
+    if name == "Config" then
+        pageProps.BorderSizePixel = 0
+        pageProps.ScrollBarThickness = 3
+        pageProps.ScrollBarImageColor3 = DIM
+        pageProps.CanvasSize = UDim2.new(0, 0, 0, 352)
+        pageProps.ScrollingDirection = Enum.ScrollingDirection.Y
+    end
+    pages[name] = new(name == "Config" and "ScrollingFrame" or "Frame", pageProps, pagesHolder)
+    tabButtons[name].Activated:Connect(function() selectTab(name) end)
+end
+
+-- aviso (toast)
+local toastFrame = new("Frame", {
+    Size = UDim2.new(1, -24, 0, 28),
+    Position = UDim2.new(0, 12, 1, -38),
+    BackgroundColor3 = CARD2,
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    ZIndex = 20,
+}, panel)
+corner(toastFrame, 9)
+local toastStroke = new("UIStroke", { Color = accent, Thickness = 1, Transparency = 1 }, toastFrame)
+onTheme(function() toastStroke.Color = accent end)
+local toastLabel = new("TextLabel", {
+    Size = UDim2.new(1, -12, 1, 0),
+    Position = UDim2.fromOffset(6, 0),
+    BackgroundTransparency = 1,
+    Text = "",
+    Font = Enum.Font.GothamMedium,
+    TextSize = 12,
+    TextColor3 = TEXT,
+    TextTransparency = 1,
+    ZIndex = 21,
+}, toastFrame)
+
+local toastToken = 0
+local function toast(text)
+    toastToken = toastToken + 1
+    local my = toastToken
+    toastLabel.Text = text
+    tween(toastFrame, { BackgroundTransparency = 0.05 }, 0.15)
+    tween(toastLabel, { TextTransparency = 0 }, 0.15)
+    tween(toastStroke, { Transparency = 0.4 }, 0.15)
+    task.delay(1.6, function()
+        if my ~= toastToken then return end
+        tween(toastFrame, { BackgroundTransparency = 1 }, 0.25)
+        tween(toastLabel, { TextTransparency = 1 }, 0.25)
+        tween(toastStroke, { Transparency = 1 }, 0.25)
+    end)
+end
+
+local function section(par, text, y)
+    return new("TextLabel", {
+        Size = UDim2.new(1, -28, 0, 12),
+        Position = UDim2.fromOffset(14, y),
+        BackgroundTransparency = 1,
+        Text = text,
+        Font = Enum.Font.GothamBold,
+        TextSize = 10,
+        TextColor3 = MUTED,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    }, par)
+end
+
+local function cardStroke(o)
+    new("UIStroke", { Color = WHITE, Thickness = 1, Transparency = 0.93 }, o)
+end
+
+-- ========== ABA REACH ==========
+local pReach = pages["Reach"]
+
+section(pReach, "REACH", 12)
+
+local reachCard = new("Frame", {
+    Size = UDim2.new(1, -20, 0, 96),
+    Position = UDim2.fromOffset(10, 28),
+    BackgroundColor3 = CARD,
+    BorderSizePixel = 0,
+}, pReach)
+corner(reachCard, 12)
+cardStroke(reachCard)
+
+local reachValue = new("TextLabel", {
+    Size = UDim2.new(1, -120, 0, 40),
+    Position = UDim2.fromOffset(14, 8),
+    BackgroundTransparency = 1,
+    Text = "",
+    Font = Enum.Font.GothamBold,
+    TextSize = 34,
+    TextColor3 = WHITE,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, reachCard)
+
+local reachCaption = new("TextLabel", {
+    Size = UDim2.new(1, -120, 0, 14),
+    Position = UDim2.fromOffset(14, 47),
+    BackgroundTransparency = 1,
+    Text = "",
+    Font = Enum.Font.Gotham,
+    TextSize = 11,
+    TextColor3 = MUTED,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, reachCard)
+
+local function roundBtn(text, pos)
+    local b = new("TextButton", {
+        Size = UDim2.fromOffset(36, 36),
+        Position = pos,
+        BackgroundColor3 = CARD2,
+        Text = text,
+        Font = Enum.Font.GothamBold,
+        TextSize = 20,
+        TextColor3 = TEXT,
+        AutoButtonColor = false,
+        BorderSizePixel = 0,
+    }, reachCard)
+    corner(b, 18)
+    return b
+end
+
+local minusBtn = roundBtn("-", UDim2.new(1, -92, 0, 12))
+local plusBtn = roundBtn("+", UDim2.new(1, -50, 0, 12))
+
+local SMIN, SMAX = 1, 15
+local reachSlider
+
+new("TextLabel", {
+    Size = UDim2.new(1, -28, 0, 12),
+    Position = UDim2.fromOffset(14, 66),
+    BackgroundTransparency = 1,
+    Text = "ajuste rapido",
+    Font = Enum.Font.Gotham,
+    TextSize = 10,
+    TextColor3 = DIM,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, reachCard)
+
+section(pReach, "POSICAO", 136)
+
+local seg = new("Frame", {
+    Size = UDim2.new(1, -20, 0, 36),
+    Position = UDim2.fromOffset(10, 152),
+    BackgroundColor3 = CARD,
+    BorderSizePixel = 0,
+}, pReach)
+corner(seg, 10)
+cardStroke(seg)
+
+local segButtons = {}
+for i, name in ipairs(PROFILES) do
+    local b = new("TextButton", {
+        Size = UDim2.new(1 / 3, -6, 1, -6),
+        Position = UDim2.new((i - 1) / 3, 3, 0, 3),
+        BackgroundColor3 = CARD,
+        Text = name,
+        Font = Enum.Font.GothamBold,
+        TextSize = 11,
+        TextColor3 = MUTED,
+        AutoButtonColor = false,
+        BorderSizePixel = 0,
+    }, seg)
+    corner(b, 8)
+    segButtons[i] = b
+end
+
+new("TextLabel", {
+    Size = UDim2.new(1, -28, 0, 14),
+    Position = UDim2.fromOffset(14, 198),
+    BackgroundTransparency = 1,
+    Text = "Segure + ou - para ajustar rapido",
+    Font = Enum.Font.Gotham,
+    TextSize = 11,
+    TextColor3 = DIM,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, pReach)
+
+-- ========== NoCD ==========
+local noCD = false
+local savedCD = {}
+local hasGC = typeof(getgc) == "function"
+local hasTouch = typeof(firetouchinterest) == "function"
+
+local function applyCD(on)
+    if not hasGC then return end
+    for _, t in ipairs(getgc(true)) do
+        if type(t) == "table" then
+            local ok, v = pcall(rawget, t, "Cooldown")
+            if ok and type(v) == "number" then
+                if on then
+                    if v > 0 then
+                        savedCD[t] = v
+                        pcall(rawset, t, "Cooldown", 0)
+                    end
+                elseif savedCD[t] then
+                    pcall(rawset, t, "Cooldown", savedCD[t])
+                end
+            end
+        end
+    end
+    if not on then savedCD = {} end
+end
+
+task.spawn(function()
+    while gui.Parent do
+        if noCD then applyCD(true) end
+        task.wait(2)
+    end
+end)
+
+-- ========== ABA EXTRAS ==========
+local pExtras = pages["Extras"]
+
+local function makeToggle(par, text, y, initial, enabled, callback)
+    local row = new("TextButton", {
+        Size = UDim2.new(1, -20, 0, 36),
+        Position = UDim2.fromOffset(10, y),
+        BackgroundColor3 = CARD,
+        Text = "",
+        AutoButtonColor = false,
+        BorderSizePixel = 0,
+    }, par)
+    corner(row, 10)
+    cardStroke(row)
+
+    new("TextLabel", {
+        Size = UDim2.new(1, -64, 1, 0),
+        Position = UDim2.fromOffset(12, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        Font = Enum.Font.GothamMedium,
+        TextSize = 13,
+        TextColor3 = enabled and TEXT or DIM,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    }, row)
+
+    local track = new("Frame", {
+        Size = UDim2.fromOffset(40, 20),
+        Position = UDim2.new(1, -50, 0.5, -10),
+        BackgroundColor3 = CARD2,
+        BorderSizePixel = 0,
+    }, row)
+    corner(track, 10)
+
+    local knob = new("Frame", {
+        Size = UDim2.fromOffset(16, 16),
+        Position = UDim2.fromOffset(2, 2),
+        BackgroundColor3 = MUTED,
+        BorderSizePixel = 0,
+    }, track)
+    corner(knob, 8)
+
+    local state = initial
+    local function paint(animate)
+        local props1 = { BackgroundColor3 = state and accent or CARD2 }
+        local props2 = {
+            Position = state and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2),
+            BackgroundColor3 = state and onAccent or MUTED,
+        }
+        if animate then
+            tween(track, props1)
+            tween(knob, props2)
+        else
+            for k, v in pairs(props1) do track[k] = v end
+            for k, v in pairs(props2) do knob[k] = v end
+        end
+    end
+    onTheme(function() paint(false) end)
+
+    row.Activated:Connect(function()
+        if not enabled then
+            toast("Indisponivel neste executor")
+            return
+        end
+        state = not state
+        paint(true)
+        callback(state)
+    end)
+end
+
+section(pExtras, "VISUAL", 12)
+
+makeToggle(pExtras, "Reach visual", 28, cfg.visual, true, function(v)
+    cfg.visual = v
+    save()
+    toast(v and "Reach visual ligado" or "Reach visual desligado")
+end)
+
+local alphaCard = new("Frame", {
+    Size = UDim2.new(1, -20, 0, 52),
+    Position = UDim2.fromOffset(10, 72),
+    BackgroundColor3 = CARD,
+    BorderSizePixel = 0,
+}, pExtras)
+corner(alphaCard, 10)
+cardStroke(alphaCard)
+
+local alphaLabel = new("TextLabel", {
+    Size = UDim2.new(1, -24, 0, 16),
+    Position = UDim2.fromOffset(12, 6),
+    BackgroundTransparency = 1,
+    Text = "",
+    Font = Enum.Font.GothamMedium,
+    TextSize = 12,
+    TextColor3 = TEXT,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, alphaCard)
+
+local alphaSlider = makeSlider(alphaCard, UDim2.fromOffset(12, 24), UDim2.new(1, -24, 0, 22), 0.5, 0.95, function(v)
+    cfg.visualAlpha = math.floor(v * 100 + 0.5) / 100
+    alphaLabel.Text = string.format("Transparencia: %d%%", math.floor(cfg.visualAlpha * 100 + 0.5))
+    saveSoon()
+end)
+alphaLabel.Text = string.format("Transparencia: %d%%", math.floor(cfg.visualAlpha * 100 + 0.5))
+alphaSlider.setValue(cfg.visualAlpha)
+
+section(pExtras, "COOLDOWN", 136)
+
+makeToggle(pExtras, hasGC and "NoCD" or "NoCD (indisponivel)", 152, false, hasGC, function(v)
+    noCD = v
+    applyCD(v)
+    toast(v and "NoCD ligado" or "NoCD desligado")
+end)
+
+-- ========== ABA CONFIG ==========
+local pConfig = pages["Config"]
+
+section(pConfig, "TEMA", 12)
+
+local themeRow = new("Frame", {
+    Size = UDim2.new(1, -20, 0, 44),
+    Position = UDim2.fromOffset(10, 28),
+    BackgroundColor3 = CARD,
+    BorderSizePixel = 0,
+}, pConfig)
+corner(themeRow, 10)
+cardStroke(themeRow)
+
+local chips = {}
+local function refreshChips()
+    for i, c in ipairs(chips) do
+        c.stroke.Transparency = (i == cfg.theme) and 0 or 1
+    end
+end
+
+for i, data in ipairs(THEMES) do
+    local chip = new("TextButton", {
+        Size = UDim2.fromOffset(26, 26),
+        Position = UDim2.new((i - 1) / 4, 0, 0.5, -13),
+        BackgroundColor3 = data[2],
+        Text = "",
+        AutoButtonColor = false,
+        BorderSizePixel = 0,
+    }, themeRow)
+    chip.Position = UDim2.new((i - 0.5) / 4, -13, 0.5, -13)
+    corner(chip, 13)
+    local stroke = new("UIStroke", { Color = WHITE, Thickness = 2, Transparency = 1 }, chip)
+    chips[i] = { btn = chip, stroke = stroke }
+    chip.Activated:Connect(function()
+        cfg.theme = i
+        accent, onAccent = data[2], data[3]
+        for _, fn in ipairs(themed) do fn() end
+        refreshChips()
+        save()
+        toast("Tema: " .. data[1])
+    end)
+end
+refreshChips()
+
+section(pConfig, "ABRIR / FECHAR", 84)
+
+local orb
+local listening = false
+
+local keyRow = new("Frame", {
+    Size = UDim2.new(1, -20, 0, 36),
+    Position = UDim2.fromOffset(10, 100),
+    BackgroundColor3 = CARD,
+    BorderSizePixel = 0,
+}, pConfig)
+corner(keyRow, 10)
+cardStroke(keyRow)
+
+new("TextLabel", {
+    Size = UDim2.new(1, -130, 1, 0),
+    Position = UDim2.fromOffset(12, 0),
+    BackgroundTransparency = 1,
+    Text = "Tecla do painel",
+    Font = Enum.Font.GothamMedium,
+    TextSize = 13,
+    TextColor3 = TEXT,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, keyRow)
+
+local keyBtn = new("TextButton", {
+    Size = UDim2.fromOffset(112, 26),
+    Position = UDim2.new(1, -122, 0.5, -13),
+    BackgroundColor3 = CARD2,
+    Text = "",
+    Font = Enum.Font.GothamBold,
+    TextSize = 12,
+    TextColor3 = TEXT,
+    AutoButtonColor = false,
+    BorderSizePixel = 0,
+}, keyRow)
+corner(keyBtn, 8)
+
+local function refreshKey()
+    if listening then
+        keyBtn.Text = "pressione..."
+        keyBtn.BackgroundColor3 = accent
+        keyBtn.TextColor3 = onAccent
+    else
+        keyBtn.Text = cfg.key
+        keyBtn.BackgroundColor3 = CARD2
+        keyBtn.TextColor3 = TEXT
+    end
+end
+onTheme(refreshKey)
+
+keyBtn.Activated:Connect(function()
+    listening = not listening
+    refreshKey()
+end)
+
+makeToggle(pConfig, "Mostrar bolinha", 142, cfg.showOrb, true, function(v)
+    cfg.showOrb = v
+    if orb then orb.Visible = v end
+    save()
+    if not v and not UserInputService.KeyboardEnabled then
+        toast("Sem teclado: voce nao vai conseguir reabrir")
+    else
+        toast(v and "Bolinha ligada" or "Bolinha desligada")
+    end
+end)
+
+section(pConfig, "SCRIPT", 190)
+
+local function diagnose()
+    local lines = {}
+    local function add(t) table.insert(lines, t) end
+
+    add("Binarium " .. VERSION .. " diagnostico")
+    add("TPS (TCs): " .. tostring(workspace:FindFirstChild("TPS") ~= nil))
+
+    local pitch = workspace:FindFirstChild("Pitch")
+    local balls = pitch and pitch:FindFirstChild("Balls")
+    add("workspace.Pitch: " .. tostring(pitch ~= nil))
+    add("workspace.Pitch.Balls: " .. tostring(balls ~= nil))
+    if balls then
+        for _, c in ipairs(balls:GetChildren()) do
+            add("  Balls." .. c.Name .. " [" .. c.ClassName .. "]")
+        end
+    end
+
+    lastScan = 0
+    local list, gameName = getBalls()
+    add("jogo: " .. tostring(gameName) .. " | bolas encontradas: " .. #list)
+    local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+    for _, ball in ipairs(list) do
+        local line = "  " .. ball:GetFullName() .. " [" .. ball.ClassName .. "] CanTouch=" .. tostring(ball.CanTouch)
+        if hrp then
+            line = line .. string.format(" dist=%.1f", (hrp.Position - ball.Position).Magnitude)
+        end
+        add(line)
+    end
+    add(string.format("reach atual: %.1f", curReach()))
+    add("partes no personagem: " .. tostring(lp.Character and #lp.Character:GetChildren() or 0))
+    add("firetouchinterest: " .. tostring(hasTouch))
+
+    local text = table.concat(lines, "\n")
+    print(text)
+    local copied = false
+    if setclipboard then copied = pcall(setclipboard, text) end
+    toast(copied and "Diagnostico copiado" or "Diagnostico no console (F9)")
+end
+
+local resetBtn = new("TextButton", {
+    Size = UDim2.new(0.5, -14, 0, 34),
+    Position = UDim2.fromOffset(10, 206),
+    BackgroundColor3 = CARD,
+    Text = "Restaurar reach",
+    Font = Enum.Font.GothamMedium,
+    TextSize = 12,
+    TextColor3 = TEXT,
+    AutoButtonColor = false,
+    BorderSizePixel = 0,
+}, pConfig)
+corner(resetBtn, 10)
+cardStroke(resetBtn)
+
+local diagBtn = new("TextButton", {
+    Size = UDim2.new(0.5, -14, 0, 34),
+    Position = UDim2.new(0.5, 4, 0, 206),
+    BackgroundColor3 = CARD,
+    Text = "Diagnostico",
+    Font = Enum.Font.GothamMedium,
+    TextSize = 12,
+    TextColor3 = TEXT,
+    AutoButtonColor = false,
+    BorderSizePixel = 0,
+}, pConfig)
+corner(diagBtn, 10)
+cardStroke(diagBtn)
+diagBtn.Activated:Connect(diagnose)
+
+local function infoRow(y, label, value, color)
+    local row = new("Frame", {
+        Size = UDim2.new(1, -20, 0, 28),
+        Position = UDim2.fromOffset(10, y),
+        BackgroundColor3 = CARD,
+        BorderSizePixel = 0,
+    }, pConfig)
+    corner(row, 8)
+    cardStroke(row)
+    new("TextLabel", {
+        Size = UDim2.new(0.5, 0, 1, 0),
+        Position = UDim2.fromOffset(12, 0),
+        BackgroundTransparency = 1,
+        Text = label,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        TextColor3 = MUTED,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    }, row)
+    return new("TextLabel", {
+        Size = UDim2.new(0.5, -12, 1, 0),
+        Position = UDim2.new(0.5, 0, 0, 0),
+        BackgroundTransparency = 1,
+        Text = value,
+        Font = Enum.Font.GothamBold,
+        TextSize = 12,
+        TextColor3 = color or TEXT,
+        TextXAlignment = Enum.TextXAlignment.Right,
+    }, row)
+end
+
+infoRow(248, "Versao", VERSION, TEXT)
+local infoGame = infoRow(280, "Jogo detectado", "nenhum", MUTED)
+infoRow(312, "Executor", (hasTouch and "touch ok" or "sem touch") .. (hasGC and " | gc ok" or " | sem gc"),
+    (hasTouch and hasGC) and GREEN or RED)
+
+-- ========== LOGICA DA UI ==========
+local function refresh()
+    local r = curReach()
+    reachValue.Text = string.format("%.1f", r)
+    reachCaption.Text = "alcance | " .. cfg.profile
+    if reachSlider then reachSlider.setValue(r) end
+    for i, b in ipairs(segButtons) do
+        local sel = PROFILES[i] == cfg.profile
+        tween(b, {
+            BackgroundColor3 = sel and accent or CARD,
+            TextColor3 = sel and onAccent or MUTED,
+        })
+    end
+end
+
+local function setReach(v)
+    v = math.floor(v * 10 + 0.5) / 10
+    cfg.reaches[cfg.profile] = math.clamp(v, 0.5, 100)
+    refresh()
+    saveSoon()
+end
+
+reachSlider = makeSlider(reachCard, UDim2.fromOffset(14, 74), UDim2.new(1, -28, 0, 18), SMIN, SMAX, setReach)
+
+holdButton(minusBtn, function() setReach(curReach() - 0.1) end)
+holdButton(plusBtn, function() setReach(curReach() + 0.1) end)
+
+for i, b in ipairs(segButtons) do
+    b.Activated:Connect(function()
+        cfg.profile = PROFILES[i]
+        refresh()
+        save()
+        toast(string.format("%s: %.1f", cfg.profile, curReach()))
+    end)
+end
+
+resetBtn.Activated:Connect(function()
+    for _, n in ipairs(PROFILES) do
+        cfg.reaches[n] = DEFAULT_REACHES[n]
+    end
+    refresh()
+    save()
+    toast("Reach restaurado")
+end)
+
+onTheme(refresh)
+selectTab("Reach")
+
+-- ponto de status pulsando quando a bola esta detectada
+task.spawn(function()
+    local dim = false
+    while gui.Parent do
+        if statusOk then
+            dim = not dim
+            tween(statusDot, { BackgroundTransparency = dim and 0.6 or 0 }, 0.7)
+        else
+            statusDot.BackgroundTransparency = 0
+        end
+        task.wait(0.75)
+    end
+end)
+
+-- ========== ABRIR / FECHAR ==========
+local open = true
+local transitionToken = 0
+
+local function setOpen(v)
+    if open == v then return end
+    open = v
+    transitionToken = transitionToken + 1
+    local my = transitionToken
+    if v then
+        root.Visible = true
+        rootScale.Scale = 0.9
+        tween(rootScale, { Scale = 1 }, 0.18)
+    else
+        tween(rootScale, { Scale = 0.9 }, 0.12)
+        task.delay(0.12, function()
+            if transitionToken == my and not open then root.Visible = false end
+        end)
+    end
+end
+
+minBtn.Activated:Connect(function() setOpen(false) end)
+
+local closeArmed = false
+closeBtn.Activated:Connect(function()
+    if closeArmed then
+        gui:Destroy()
+        return
+    end
+    closeArmed = true
+    tween(closeBtn, { BackgroundColor3 = RED })
+    toast("Toque de novo para fechar o script")
+    task.delay(2, function()
+        closeArmed = false
+        if closeBtn.Parent then tween(closeBtn, { BackgroundColor3 = CARD2 }) end
+    end)
+end)
+
+table.insert(conns, UserInputService.InputBegan:Connect(function(i, gp)
+    if i.UserInputType ~= Enum.UserInputType.Keyboard then return end
+
+    if listening then
+        listening = false
+        if i.KeyCode ~= Enum.KeyCode.Escape and i.KeyCode ~= Enum.KeyCode.Unknown then
+            cfg.key = i.KeyCode.Name
+            save()
+            toast("Tecla: " .. cfg.key)
+        end
+        refreshKey()
+        return
+    end
+
+    if gp then return end
+    if i.KeyCode.Name == cfg.key then
+        setOpen(not open)
+    end
+end))
+
+-- bolinha
+orb = new("TextButton", {
+    Visible = cfg.showOrb,
+    Size = UDim2.fromOffset(48, 48),
+    Position = cfg.orbPos and tableToPos(cfg.orbPos) or UDim2.new(0, 14, 0.5, -24),
+    BackgroundColor3 = BLACK,
+    Text = "B",
+    Font = Enum.Font.GothamBold,
+    TextSize = 20,
+    TextColor3 = WHITE,
+    AutoButtonColor = false,
+    BorderSizePixel = 0,
+}, gui)
+corner(orb, 24)
+local orbStroke = new("UIStroke", { Color = accent, Thickness = 1.5, Transparency = 0.2 }, orb)
+onTheme(function() orbStroke.Color = accent end)
+makeDraggable(orb, orb, function() setOpen(not open) end, function()
+    cfg.orbPos = posToTable(orb.Position)
+    save()
+end)
+
+-- se a posicao salva ficou fora da tela, volta ao padrao
+task.spawn(function()
+    task.wait(0.2)
+    local cam = workspace.CurrentCamera
+    if not cam then return end
+    local vp = cam.ViewportSize
+    local rp, op = root.AbsolutePosition, orb.AbsolutePosition
+    if rp.X > vp.X - 40 or rp.Y > vp.Y - 40 or rp.X < -PANEL_W + 40 or rp.Y < -20 then
+        root.Position = UDim2.new(0.5, -PANEL_W / 2, 0.2, 0)
+    end
+    if op.X > vp.X - 20 or op.Y > vp.Y - 20 or op.X < -28 or op.Y < -28 then
+        orb.Position = UDim2.new(0, 14, 0.5, -24)
+    end
+end)
+
+-- ========== REACH ==========
+local visualPart = new("Part", {
+    Name = "BinariumVisual",
+    Shape = Enum.PartType.Ball,
+    Anchored = true,
+    CanCollide = false,
+    CanTouch = false,
+    CanQuery = false,
+    Material = Enum.Material.Neon,
+    Color = accent,
+    Transparency = 1,
+    Size = Vector3.new(1, 1, 1),
+})
+visualPart.Parent = workspace
+onTheme(function() visualPart.Color = accent end)
+
+local lastLabel = 0
+local lastTouch = 0
+
+local hb = RunService.Heartbeat:Connect(function()
+    local char = lp.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local balls, gameName = getBalls()
+
+    if tick() - lastLabel > 0.25 then
+        lastLabel = tick()
+        if not hasTouch then
+            setStatus("Executor sem firetouchinterest", RED, false)
+        elseif gameName then
+            setStatus(gameName .. " detectado", GREEN, true)
+        else
+            setStatus("Aguardando bola", DIM, false)
+        end
+        infoGame.Text = gameName or "nenhum"
+        infoGame.TextColor3 = gameName and GREEN or MUTED
+    end
+
+    if cfg.visual and hrp then
+        local s = curReach() * 2
+        visualPart.Size = Vector3.new(s, s, s)
+        visualPart.Position = hrp.Position
+        visualPart.Transparency = cfg.visualAlpha
+    else
+        visualPart.Transparency = 1
+    end
+
+    if not hasTouch or not char or #balls == 0 then return end
+    if tick() - lastTouch < 0.03 then return end
+
+    local reach = curReach()
+    for _, ball in ipairs(balls) do
+        if ball.Parent then
+            for _, part in ipairs(char:GetChildren()) do
+                if part:IsA("BasePart") and (ball.Position - part.Position).Magnitude <= reach then
+                    lastTouch = tick()
+                    firetouchinterest(ball, part, 0)
+                    firetouchinterest(ball, part, 1)
+                end
+            end
+        end
+    end
+end)
+
+-- ========== LIMPEZA ==========
+gui.Destroying:Connect(function()
+    noCD = false
+    applyCD(false)
+    hb:Disconnect()
+    for _, c in ipairs(conns) do pcall(function() c:Disconnect() end) end
+    visualPart:Destroy()
+end)
