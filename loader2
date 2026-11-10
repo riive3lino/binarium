@@ -1,210 +1,1891 @@
--- ====================================================================
--- SERVICES & VARIÁVEIS PRINCIPAIS
--- ====================================================================
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+--------------------------------------------------
+-- BINARIUM 1.2
+-- Desenvolvido por riive3lino
+-- Interface WindUI
+--------------------------------------------------
+
+local CoreGui = game:GetService("CoreGui")
+
+--------------------------------------------------
+-- HUB
+--------------------------------------------------
+
+local function runHub()
+
 local UserInputService = game:GetService("UserInputService")
-local Lighting = game:GetService("Lighting")
-local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
 
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
-local RootPart = Character:WaitForChild("HumanoidRootPart")
+local ConfigLoading = false
 
-local parentContainer = gethui and gethui() or LocalPlayer:WaitForChild("PlayerGui")
-if parentContainer:FindFirstChild("BIHubGui") then
-    parentContainer.BINARIUMHubGui:Destroy()
-end
+--------------------------------------------------
+-- TELA DE CARREGAMENTO
+--------------------------------------------------
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BINARIUmHubGui"
-ScreenGui.Parent = parentContainer
-ScreenGui.ResetOnSpawn = false
+local Loading = {}
 
--- ====================================================================
--- TELA DE CARREGAMENTO (LOADING SCREEN)
--- ====================================================================
-local LoadingFrame = Instance.new("Frame")
-LoadingFrame.Name = "LoadingFrame"
-LoadingFrame.Parent = ScreenGui
-LoadingFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
-LoadingFrame.Position = UDim2.new(0.5, -175, 0.5, -105)
-LoadingFrame.Size = UDim2.new(0, 350, 0, 210)
-LoadingFrame.ClipsDescendants = true
+do
+    local TweenService = game:GetService("TweenService")
+    local RunService = game:GetService("RunService")
 
-local LoadingCorner = Instance.new("UICorner")
-LoadingCorner.CornerRadius = UDim.new(0, 12)
-LoadingCorner.Parent = LoadingFrame
+    local purple = Color3.fromRGB(0, 0, 0)
+    local blue = Color3.fromRGB(8, 8, 8)
 
-local LoadingStroke = Instance.new("UIStroke")
-LoadingStroke.Color = Color3.fromRGB(40, 40, 50)
-LoadingStroke.Thickness = 1.5
-LoadingStroke.Parent = LoadingFrame
+    local tips = {
+        "O RightShift abre e fecha o hub. Dá para trocar a tecla em Configurações.",
+        "O Reach mede a distância das suas pernas até a bola.",
+        "Na aba Atalhos você escolhe uma tecla para ligar e desligar cada função.",
+        "Salve suas configurações e ative o carregamento automático.",
+        "O Auto Dive faz o mergulho e a defesa sozinho.",
+        "A previsão da bola marca no chão onde ela vai cair.",
+        "O Ball Check desliga o Auto Dive quando a bola chega perto de você.",
+        "O Auto Follow para a uma distância que você escolhe.",
+        "Você pode salvar skyboxes e skins de bola por ID.",
+        "A aba Aparência tem 5 temas para a interface.",
+        "O Tool Check faz o Auto Dive funcionar só com a ferramenta GK.",
+        "Os botões de celular incluem joystick, pulo e as teclas R e T.",
+    }
 
-local LoadTitle = Instance.new("TextLabel")
-LoadTitle.Parent = LoadingFrame
-LoadTitle.BackgroundTransparency = 1
-LoadTitle.Position = UDim2.new(0, 0, 0, 15)
-LoadTitle.Size = UDim2.new(1, 0, 0, 25)
-LoadTitle.Font = Enum.Font.GothamBold
-LoadTitle.Text = "BINARIUM HUB"
-LoadTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-LoadTitle.TextSize = 18
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "BinariumLoading"
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+    gui.DisplayOrder = 999999
+    gui.Parent = (gethui and gethui()) or CoreGui
 
-local LoadDev = Instance.new("TextLabel")
-LoadDev.Parent = LoadingFrame
-LoadDev.BackgroundTransparency = 1
-LoadDev.Position = UDim2.new(0, 0, 0, 42)
-LoadDev.Size = UDim2.new(1, 0, 0, 18)
-LoadDev.Font = Enum.Font.GothamMedium
-LoadDev.Text = "by @7zhc"
-LoadDev.TextColor3 = Color3.fromRGB(120, 120, 140)
-LoadDev.TextSize = 12
+    local overlay = Instance.new("Frame")
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    overlay.BackgroundTransparency = 0.1
+    overlay.BorderSizePixel = 0
+    overlay.Parent = gui
 
-local LoadWarn = Instance.new("TextLabel")
-LoadWarn.Parent = LoadingFrame
-LoadWarn.BackgroundTransparency = 1
-LoadWarn.Position = UDim2.new(0, 15, 0, 68)
-LoadWarn.Size = UDim2.new(1, -30, 0, 85)
-LoadWarn.Font = Enum.Font.Gotham
-LoadWarn.Text = "go fuck skidder lol"
-LoadWarn.TextColor3 = Color3.fromRGB(240, 80, 80)
-LoadWarn.TextSize = 10
-LoadWarn.TextWrapped = true
+    local root = Instance.new("CanvasGroup")
+    root.Size = UDim2.new(0, 420, 0, 270)
+    root.Position = UDim2.new(0.5, 0, 0.5, 0)
+    root.AnchorPoint = Vector2.new(0.5, 0.5)
+    root.BackgroundTransparency = 1
+    root.Parent = gui
 
-local BarBackground = Instance.new("Frame")
-BarBackground.Parent = LoadingFrame
-BarBackground.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-BarBackground.Position = UDim2.new(0.1, 0, 0.86, 0)
-BarBackground.Size = UDim2.new(0.8, 0, 0, 8)
+    local function addCorner(parent, radius)
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, radius)
+        corner.Parent = parent
+    end
 
-local BarCorner = Instance.new("UICorner")
-BarCorner.CornerRadius = UDim.new(1, 0)
-BarCorner.Parent = BarBackground
+    local function addGradient(parent, rotation)
+        local gradient = Instance.new("UIGradient")
+        gradient.Color = ColorSequence.new(purple, blue)
+        gradient.Rotation = rotation or 0
+        gradient.Parent = parent
+        return gradient
+    end
 
-local BarFill = Instance.new("Frame")
-BarFill.Parent = BarBackground
-BarFill.BackgroundColor3 = Color3.fromRGB(60, 220, 100)
-BarFill.Size = UDim2.new(0, 0, 1, 0)
+    local function newLabel(parent, text, size, font, color, position, labelSize, alignment)
+        local label = Instance.new("TextLabel")
+        label.BackgroundTransparency = 1
+        label.Text = text
+        label.TextSize = size
+        label.Font = font
+        label.TextColor3 = color
+        label.TextXAlignment = alignment or Enum.TextXAlignment.Left
+        label.Position = position
+        label.Size = labelSize
+        label.Parent = parent
+        return label
+    end
 
-local FillCorner = Instance.new("UICorner")
-FillCorner.CornerRadius = UDim.new(1, 0)
-FillCorner.Parent = BarFill
+    -- Cartão principal
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(0, 380, 0, 170)
+    card.Position = UDim2.new(0, 20, 0, 10)
+    card.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    card.BorderSizePixel = 0
+    card.ClipsDescendants = true
+    card.Parent = root
+    addCorner(card, 14)
 
--- Animação de Carregamento
-TweenService:Create(BarFill, TweenInfo.new(3.0, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 1.5
+    stroke.Color = Color3.fromRGB(8, 8, 8)
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = card
 
-task.delay(3.2, function()
-    TweenService:Create(LoadingFrame, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-    for _, child in ipairs(LoadingFrame:GetDescendants()) do
-        if child:IsA("TextLabel") then
-            TweenService:Create(child, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
-        elseif child:IsA("Frame") then
-            TweenService:Create(child, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
+    local strokeGradient = addGradient(stroke, 0)
+
+    TweenService:Create(
+        strokeGradient,
+        TweenInfo.new(4, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1),
+        { Rotation = 360 }
+    ):Play()
+
+    -- Faixa de luz que varre o cartão
+    local scan = Instance.new("Frame")
+    scan.Size = UDim2.new(0, 80, 1, 0)
+    scan.Position = UDim2.new(0, -80, 0, 0)
+    scan.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    scan.BorderSizePixel = 0
+    scan.Parent = card
+
+    local scanGradient = Instance.new("UIGradient")
+    scanGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.5, 0.85),
+        NumberSequenceKeypoint.new(1, 1),
+    })
+    scanGradient.Parent = scan
+
+    TweenService:Create(
+        scan,
+        TweenInfo.new(2.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1),
+        { Position = UDim2.new(0, 380, 0, 0) }
+    ):Play()
+
+    -- Título e subtítulo (TEXTO BRANCO)
+    local title = newLabel(
+        card, "B I N A R I U M", 28, Enum.Font.GothamBold, Color3.fromRGB(255, 255, 255),
+        UDim2.new(0, 0, 0, 18), UDim2.new(1, 0, 0, 34), Enum.TextXAlignment.Center
+    )
+    addGradient(title, 0)
+
+    local subtitle = newLabel(
+        card, "HUB", 11, Enum.Font.GothamMedium, Color3.fromRGB(255, 255, 255),
+        UDim2.new(0, 0, 0, 56), UDim2.new(1, 0, 0, 14), Enum.TextXAlignment.Center
+    )
+
+    -- Estado e porcentagem (TEXTO BRANCO)
+    local status = newLabel(
+        card, "Iniciando...", 12, Enum.Font.Gotham, Color3.fromRGB(255, 255, 255),
+        UDim2.new(0, 24, 0, 100), UDim2.new(0.7, 0, 0, 16)
+    )
+
+    local percent = newLabel(
+        card, "0%", 12, Enum.Font.GothamBold, Color3.fromRGB(255, 255, 255),
+        UDim2.new(1, -84, 0, 100), UDim2.new(0, 60, 0, 16), Enum.TextXAlignment.Right
+    )
+
+    -- Barra de carregamento
+    local track = Instance.new("Frame")
+    track.Position = UDim2.new(0, 24, 0, 124)
+    track.Size = UDim2.new(1, -48, 0, 6)
+    track.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    track.BorderSizePixel = 0
+    track.Parent = card
+    addCorner(track, 3)
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(0, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+    fill.BorderSizePixel = 0
+    fill.Parent = track
+    addCorner(fill, 3)
+    addGradient(fill, 0)
+
+    local head = Instance.new("Frame")
+    head.Size = UDim2.new(0, 10, 0, 10)
+    head.AnchorPoint = Vector2.new(0.5, 0.5)
+    head.Position = UDim2.new(1, 0, 0.5, 0)
+    head.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    head.BackgroundTransparency = 0.15
+    head.BorderSizePixel = 0
+    head.ZIndex = 2
+    head.Parent = fill
+    addCorner(head, 5)
+
+    -- Rodapé do cartão (TEXTO BRANCO)
+    local dot = newLabel(
+        card, "●  SISTEMA", 10, Enum.Font.GothamBold, Color3.fromRGB(255, 255, 255),
+        UDim2.new(0, 24, 1, -26), UDim2.new(0, 120, 0, 14)
+    )
+
+    TweenService:Create(
+        dot,
+        TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+        { TextColor3 = blue }
+    ):Play()
+
+    newLabel(
+        card, "WindUI", 10, Enum.Font.GothamMedium, Color3.fromRGB(255, 255, 255),
+        UDim2.new(1, -144, 1, -26), UDim2.new(0, 120, 0, 14), Enum.TextXAlignment.Right
+    )
+
+    -- Curiosidades abaixo do cartão (TEXTO BRANCO)
+    local tipTag = newLabel(
+        root, "CURIOSIDADE", 10, Enum.Font.GothamBold, Color3.fromRGB(255, 255, 255),
+        UDim2.new(0, 20, 0, 196), UDim2.new(0, 380, 0, 14), Enum.TextXAlignment.Center
+    )
+
+    local tipText = newLabel(
+        root, "", 13, Enum.Font.Gotham, Color3.fromRGB(255, 255, 255),
+        UDim2.new(0, 20, 0, 214), UDim2.new(0, 380, 0, 48), Enum.TextXAlignment.Center
+    )
+    tipText.TextWrapped = true
+    tipText.TextYAlignment = Enum.TextYAlignment.Top
+    tipText.TextTransparency = 1
+
+    -- Estado
+    local started = os.clock()
+    local minTime = 3.5
+    local stage = 0.05
+    local displayed = 0
+    local finished = false
+    local alive = true
+    local renderConnection = nil
+
+    local order = {}
+
+    for index = 1, #tips do
+        order[index] = index
+    end
+
+    for index = #order, 2, -1 do
+        local other = math.random(index)
+        order[index], order[other] = order[other], order[index]
+    end
+
+    task.spawn(function()
+        local index = 1
+
+        while alive do
+            tipText.Text = tips[order[index]]
+
+            TweenService:Create(tipText, TweenInfo.new(0.35), { TextTransparency = 0 }):Play()
+            task.wait(2.6)
+
+            if not alive then break end
+
+            TweenService:Create(tipText, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
+            task.wait(0.35)
+
+            index = index % #order + 1
+        end
+    end)
+
+    renderConnection = RunService.RenderStepped:Connect(function(dt)
+        if not alive then return end
+
+        local elapsed = os.clock() - started
+        local timeProgress = math.min(elapsed / minTime, 1)
+        local target = math.min(1, math.max(stage, math.min(timeProgress, stage + 0.2)))
+
+        displayed = displayed + (target - displayed) * math.min(1, dt * 5)
+
+        fill.Size = UDim2.new(displayed, 0, 1, 0)
+        percent.Text = math.floor(displayed * 100 + 0.5) .. "%"
+    end)
+
+    function Loading.Set(progress, text)
+        stage = math.max(stage, math.clamp(progress, 0, 1))
+
+        if text then
+            status.Text = text
         end
     end
-    task.wait(0.4)
-    LoadingFrame:Destroy()
+
+    function Loading.SetSubtitle(text)
+        subtitle.Text = text
+    end
+
+    function Loading.Destroy()
+        alive = false
+
+        if renderConnection then
+            renderConnection:Disconnect()
+            renderConnection = nil
+        end
+
+        if gui then
+            gui:Destroy()
+            gui = nil
+        end
+    end
+
+    function Loading.Finish()
+        if finished then return end
+        finished = true
+
+        stage = 1
+        status.Text = "Finalizando..."
+
+        task.spawn(function()
+            while alive and (displayed < 0.99 or os.clock() - started < minTime) do
+                task.wait(0.05)
+            end
+
+            if not alive then return end
+
+            status.Text = "Pronto!"
+            percent.Text = "100%"
+            fill.Size = UDim2.new(1, 0, 1, 0)
+
+            task.wait(0.4)
+
+            TweenService:Create(root, TweenInfo.new(0.5), { GroupTransparency = 1 }):Play()
+            TweenService:Create(overlay, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+
+            task.wait(0.55)
+
+            Loading.Destroy()
+        end)
+    end
+
+    task.delay(25, function()
+        Loading.Destroy()
+    end)
+end
+
+
+--------------------------------------------------
+-- SERVIÇOS
+--------------------------------------------------
+
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+
+local LocalPlayer = Players.LocalPlayer
+
+--------------------------------------------------
+-- CARREGAR WINDUI
+--------------------------------------------------
+
+local success, WindUI = pcall(function()
+    return loadstring(game:HttpGet(
+        "https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"
+    ))()
 end)
 
--- ====================================================================
--- CONFIGURAÇÕES DE ESTADO
--- ====================================================================
-local AutoFollowEnabled = false
-local ReachEnabled = false
-local ReachDistance = 3.5
-local FollowDistance = 1.8
-
-local TargetCenter = Vector3.new(0, -28.94, 0)
-local CenterTolerance = 3.5
-
-local function UpdateCharacter(newChar)
-    Character = newChar
-    Humanoid = newChar:WaitForChild("Humanoid")
-    RootPart = newChar:WaitForChild("HumanoidRootPart")
+if not success or not WindUI then
+    warn("[BINARIUM] Erro ao carregar WindUI:", WindUI)
+    Loading.Destroy()
+    return
 end
-LocalPlayer.CharacterAdded:Connect(UpdateCharacter)
 
--- ====================================================================
--- 1. SISTEMA DE DRAG
--- ====================================================================
-local function MakeDraggable(guiObject)
-    local dragging, dragInput, dragStart, startPos
+Loading.Set(0.35, "Interface carregada...")
 
-    guiObject.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = guiObject.Position
+--------------------------------------------------
+-- CONFIGURAÇÕES
+--------------------------------------------------
 
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
+local Config = {
+    Version = "1.3.2",
+    Theme = "Binarium Purple",
+    Notifications = true
+}
 
-    guiObject.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
+Loading.SetSubtitle("HUB  •  v" .. Config.Version)
 
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            guiObject.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
-        end
+local function Notify(title, content, icon)
+    if not Config.Notifications or ConfigLoading then return end
+
+    pcall(function()
+        WindUI:Notify({
+            Title = title,
+            Content = content,
+            Icon = icon or "info",
+            Duration = 3
+        })
     end)
 end
 
--- ====================================================================
--- 2. DETECTOR DA BOLA MAIS PRÓXIMA
--- ====================================================================
-local function GetClosestBall()
-    if not RootPart then return nil end
+--------------------------------------------------
+-- TEMAS (cores de UI em preto / preto-claro)
+--------------------------------------------------
+
+local Themes = {
+    {
+        Name = "Binarium Purple",
+        Accent = Color3.fromRGB(0, 0, 0),
+        Background = Color3.fromRGB(8, 8, 8),
+        Outline = Color3.fromRGB(0, 0, 0),
+        Text = Color3.fromRGB(255, 255, 255),
+        Placeholder = Color3.fromRGB(200, 200, 200),
+        Button = Color3.fromRGB(8, 8, 8),
+        Icon = Color3.fromRGB(255, 255, 255)
+    },
+    {
+        Name = "Binarium Blue",
+        Accent = Color3.fromRGB(8, 8, 8),
+        Background = Color3.fromRGB(0, 0, 0),
+        Outline = Color3.fromRGB(8, 8, 8),
+        Text = Color3.fromRGB(255, 255, 255),
+        Placeholder = Color3.fromRGB(200, 200, 200),
+        Button = Color3.fromRGB(0, 0, 0),
+        Icon = Color3.fromRGB(255, 255, 255)
+    },
+    {
+        Name = "Binarium Crimson",
+        Accent = Color3.fromRGB(0, 0, 0),
+        Background = Color3.fromRGB(8, 8, 8),
+        Outline = Color3.fromRGB(0, 0, 0),
+        Text = Color3.fromRGB(255, 255, 255),
+        Placeholder = Color3.fromRGB(200, 200, 200),
+        Button = Color3.fromRGB(8, 8, 8),
+        Icon = Color3.fromRGB(255, 255, 255)
+    },
+    {
+        Name = "Binarium Emerald",
+        Accent = Color3.fromRGB(8, 8, 8),
+        Background = Color3.fromRGB(0, 0, 0),
+        Outline = Color3.fromRGB(8, 8, 8),
+        Text = Color3.fromRGB(255, 255, 255),
+        Placeholder = Color3.fromRGB(200, 200, 200),
+        Button = Color3.fromRGB(0, 0, 0),
+        Icon = Color3.fromRGB(255, 255, 255)
+    },
+    {
+        Name = "Binarium AMOLED",
+        Accent = Color3.fromRGB(0, 0, 0),
+        Background = Color3.fromRGB(8, 8, 8),
+        Outline = Color3.fromRGB(0, 0, 0),
+        Text = Color3.fromRGB(255, 255, 255),
+        Placeholder = Color3.fromRGB(200, 200, 200),
+        Button = Color3.fromRGB(8, 8, 8),
+        Icon = Color3.fromRGB(255, 255, 255)
+    }
+}
+
+local ThemeNames = {}
+
+for _, theme in ipairs(Themes) do
+    table.insert(ThemeNames, theme.Name)
+
+    local ok, err = pcall(function()
+        WindUI:AddTheme(theme)
+    end)
+
+    if not ok then
+        warn("[BINARIUM THEME]", err)
+    end
+end
+
+pcall(function()
+    WindUI:SetTheme(Config.Theme)
+end)
+
+--------------------------------------------------
+-- INFORMAÇÕES DO JOGADOR
+--------------------------------------------------
+
+local playerName = LocalPlayer.Name
+local displayName = LocalPlayer.DisplayName
+local userId = tostring(LocalPlayer.UserId)
+local accountAge = tostring(LocalPlayer.AccountAge) .. " dias"
+
+local gameName = "Experiência Roblox"
+
+pcall(function()
+    local info = MarketplaceService:GetProductInfo(game.PlaceId)
+
+    if info and info.Name then
+        gameName = info.Name
+    end
+end)
+
+--------------------------------------------------
+-- FUNÇÕES DO BINARIUM
+--------------------------------------------------
+
+local Game = {}
+
+do
+local RunService        = game:GetService("RunService")
+local UserInputService  = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace         = game:GetService("Workspace")
+local HttpService       = game:GetService("HttpService")
+local Lighting          = game:GetService("Lighting")
+
+local reachConfig = {
+    isActive      = false,
+    reachDistance = 3.5,
+    sphereEnabled = false,
+}
+
+-- Detecção de bola (cache de candidatas)
+local BallCandidates   = {}
+local CachedBall       = nil
+local LastBallScan     = 0
+local BallScanInterval = 0.05
+
+local function IsBall(obj)
+    if not obj or not obj:IsA("BasePart") then
+        return false
+    end
+
+    local name = obj.Name:lower()
+
+    return obj.Name == "TPS"
+        or name:find("ball") ~= nil
+        or name:find("bola") ~= nil
+        or name:find("football") ~= nil
+        or name:find("soccer") ~= nil
+end
+
+local function AddBallCandidate(obj)
+    if IsBall(obj) then
+        BallCandidates[obj] = true
+    end
+end
+
+for _, obj in ipairs(Workspace:GetDescendants()) do
+    AddBallCandidate(obj)
+end
+
+Workspace.DescendantAdded:Connect(AddBallCandidate)
+
+Workspace.DescendantRemoving:Connect(function(obj)
+    BallCandidates[obj] = nil
+    if CachedBall == obj then
+        CachedBall = nil
+    end
+end)
+
+local function GetClosestBall(rootPart)
+    if not rootPart or not rootPart.Parent then
+        return nil
+    end
+
+    local now = os.clock()
+    if now - LastBallScan < BallScanInterval then
+        return CachedBall
+    end
+    LastBallScan = now
 
     local closestBall = nil
-    local shortestDistance = math.huge
+    local closestDistance = math.huge
+    local rootPosition = rootPart.Position
 
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and (obj.Name == "TPS" or obj.Name:lower():find("ball") or obj.Name:lower():find("bola")) then
-            local size = obj.Size
-            local isCorrectSize = (size.X >= 0.8 and size.X <= 5.0)
-            local isAtCenter = (obj.Position - TargetCenter).Magnitude <= CenterTolerance
+    for ball in pairs(BallCandidates) do
+        if not ball.Parent or not IsBall(ball) then
+            BallCandidates[ball] = nil
+        else
+            local offset = ball.Position - rootPosition
+            local distanceSquared = offset.X * offset.X
+                + offset.Y * offset.Y
+                + offset.Z * offset.Z
 
-            if isCorrectSize and not isAtCenter then
-                local dist = (obj.Position - RootPart.Position).Magnitude
-                if dist < shortestDistance then
-                    shortestDistance = dist
-                    closestBall = obj
-                end
+            if distanceSquared < closestDistance then
+                closestDistance = distanceSquared
+                closestBall = ball
             end
         end
     end
 
+    CachedBall = closestBall
     return closestBall
 end
 
--- ====================================================================
--- 3. DETECTOR DE INPUT MANUAL
--- ====================================================================
-local function IsManualMoving()
-    local keyMovement = UserInputService:IsKeyDown(Enum.KeyCode.W) or 
-                        UserInputService:IsKeyDown(Enum.KeyCode.A) or 
-                        UserInputService:IsKeyDown(Enum.KeyCode.S) or 
-                        UserInputService:IsKeyDown(Enum.KeyCode.D)
-    
-    if keyMovement then return true end
+-- Esfera visual do alcance (objeto 3D → preto)
+local ReachSphere = nil
 
-    if Humanoid then
-        local moveVec = Humanoid.MoveDirection
-        if moveVec.Magnitude > 0.05 then
+local function updateSphere()
+    if not reachConfig.sphereEnabled then
+        if ReachSphere then
+            ReachSphere:Destroy()
+            ReachSphere = nil
+        end
+        return
+    end
+
+    local character = LocalPlayer.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    if not ReachSphere then
+        ReachSphere = Instance.new("Part")
+        ReachSphere.Name         = "BinariumReachSphere"
+        ReachSphere.Shape        = Enum.PartType.Ball
+        ReachSphere.Anchored     = true
+        ReachSphere.CanCollide   = false
+        ReachSphere.CanTouch     = false
+        ReachSphere.CanQuery     = false
+        ReachSphere.Massless     = true
+        ReachSphere.Material     = Enum.Material.ForceField
+        ReachSphere.Color        = Color3.fromRGB(0, 0, 0)
+        ReachSphere.Transparency = 0.8
+        ReachSphere.CastShadow   = false
+        ReachSphere.Parent       = Workspace
+    end
+
+    local diameter = reachConfig.reachDistance * 2
+    ReachSphere.Size = Vector3.new(diameter, diameter, diameter)
+    ReachSphere.CFrame = root.CFrame
+end
+
+RunService.RenderStepped:Connect(function()
+    if not reachConfig.sphereEnabled or not ReachSphere then return end
+
+    local character = LocalPlayer.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if root then
+        ReachSphere.Position = root.Position
+    end
+end)
+
+-- Loop do reach
+local lastReachTick = 0
+local ReachInterval = 0.035
+
+RunService.Heartbeat:Connect(function()
+    if not reachConfig.isActive then return end
+    if not firetouchinterest then return end
+
+    local character = LocalPlayer.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not root or not humanoid or humanoid.Health <= 0 then return end
+
+    local now = os.clock()
+    if now - lastReachTick < ReachInterval then return end
+    lastReachTick = now
+
+    local ball = GetClosestBall(root)
+    if not ball or not ball.Parent then return end
+
+    local distance = (ball.Position - root.Position).Magnitude
+    local ballRadius = math.max(ball.Size.X, ball.Size.Y, ball.Size.Z) / 2
+
+    if distance - ballRadius > reachConfig.reachDistance then return end
+
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            firetouchinterest(part, ball, 0)
+            firetouchinterest(part, ball, 1)
+        end
+    end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function()
+    CachedBall = nil
+    LastBallScan = 0
+end)
+
+function Game.setReachActive(value)
+    reachConfig.isActive = value
+end
+
+function Game.setReachSphere(value)
+    reachConfig.sphereEnabled = value
+    updateSphere()
+end
+
+function Game.setReachDistance(value)
+    reachConfig.reachDistance = value
+    if reachConfig.sphereEnabled then
+        updateSphere()
+    end
+end
+
+-- Partes do corpo
+local reachLegNames = {
+    "Right Leg", "Left Leg", "RightUpperLeg", "LeftUpperLeg",
+    "RightLowerLeg", "LeftLowerLeg", "Right Foot", "Left Foot",
+    "RightFoot", "LeftFoot",
+}
+
+local reachArmNames = {
+    "Right Arm", "Left Arm", "RightUpperArm", "LeftUpperArm",
+    "RightLowerArm", "LeftLowerArm", "Right Hand", "Left Hand",
+    "RightHand", "LeftHand",
+}
+
+-- Auto Follow
+local following        = false
+local followTarget     = nil
+local followEnabled    = false
+local followMaxRange   = 150
+local followStopRange  = 0.8
+
+local myCharacter = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local myHumanoid  = myCharacter:WaitForChild("Humanoid")
+local myRoot      = myCharacter:WaitForChild("HumanoidRootPart")
+
+local followGui = Instance.new("ScreenGui")
+followGui.Name           = "TPSFollowUI"
+followGui.ResetOnSpawn   = false
+followGui.IgnoreGuiInset = true
+followGui.Enabled        = false
+followGui.Parent         = LocalPlayer:WaitForChild("PlayerGui")
+
+local followButton = Instance.new("TextButton")
+followButton.Name             = "FollowButton"
+followButton.Size             = UDim2.new(0, 120, 0, 42)
+followButton.Position         = UDim2.new(0.82, 0, 0.68, 0)
+followButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+followButton.BorderSizePixel  = 0
+followButton.Text             = "Follow: OFF"
+followButton.TextColor3       = Color3.fromRGB(255, 255, 255)  -- TEXTO BRANCO
+followButton.TextSize         = 13
+followButton.Font             = Enum.Font.GothamBold
+followButton.AutoButtonColor  = true
+followButton.Visible          = true
+followButton.Parent           = followGui
+
+local followCorner = Instance.new("UICorner", followButton)
+followCorner.CornerRadius = UDim.new(0, 8)
+
+local followStroke = Instance.new("UIStroke", followButton)
+followStroke.Color     = Color3.fromRGB(8, 8, 8)
+followStroke.Thickness = 1.5
+
+local function isValidBall(part)
+    return part
+        and part.Parent
+        and part:IsA("BasePart")
+        and part.Name == "TPS"
+        and part:IsDescendantOf(Workspace)
+end
+
+local function findNearestBall()
+    local nearest, nearestDistance = nil, math.huge
+    for _, object in ipairs(Workspace:GetDescendants()) do
+        if object:IsA("BasePart") and object.Name == "TPS" then
+            local distance = (object.Position - myRoot.Position).Magnitude
+            if distance <= followMaxRange and distance < nearestDistance then
+                nearestDistance = distance
+                nearest = object
+            end
+        end
+    end
+    return nearest
+end
+
+local function updateFollowButton()
+    if following then
+        followButton.Text             = "Follow: ON"
+        followButton.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+        followButton.TextColor3       = Color3.fromRGB(255, 255, 255)  -- TEXTO BRANCO
+        followStroke.Color            = Color3.fromRGB(8, 8, 8)
+    else
+        followButton.Text             = "Follow: OFF"
+        followButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        followButton.TextColor3       = Color3.fromRGB(255, 255, 255)  -- TEXTO BRANCO
+        followStroke.Color            = Color3.fromRGB(8, 8, 8)
+    end
+end
+
+local function startFollow()
+    local ball = findNearestBall()
+    if not ball then return end
+    followTarget = ball
+    following = true
+    updateFollowButton()
+end
+
+local function stopFollow()
+    following = false
+    followTarget = nil
+    updateFollowButton()
+end
+
+local function toggleFollow()
+    if not followEnabled then return end
+    if following then
+        stopFollow()
+    else
+        startFollow()
+    end
+end
+
+followButton.MouseButton1Click:Connect(toggleFollow)
+
+RunService.RenderStepped:Connect(function()
+    if not following then return end
+    if not myCharacter or not myCharacter.Parent then return end
+    if not myHumanoid or myHumanoid.Health <= 0 then return end
+    if not myRoot or not myRoot.Parent then return end
+
+    if not isValidBall(followTarget) then
+        stopFollow()
+        return
+    end
+    if followTarget:IsDescendantOf(myCharacter) then return end
+
+    local toBall = followTarget.Position - myRoot.Position
+    local flatDirection = Vector3.new(toBall.X, 0, toBall.Z)
+    if flatDirection.Magnitude <= followStopRange then return end
+
+    if myHumanoid.MoveDirection.Magnitude > 0.05 then return end
+
+    myHumanoid:Move(flatDirection.Unit, false)
+end)
+
+local dragging  = false
+local dragStart = nil
+local startPos  = nil
+local dragInput = nil
+
+followButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging  = true
+        dragStart = input.Position
+        startPos  = followButton.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+followButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - dragStart
+        followButton.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+    myCharacter = newCharacter
+    myHumanoid  = myCharacter:WaitForChild("Humanoid")
+    myRoot      = myCharacter:WaitForChild("HumanoidRootPart")
+    following    = false
+    followTarget = nil
+    updateFollowButton()
+end)
+
+function Game.setFollowEnabled(value)
+    followEnabled = value
+    followGui.Enabled = value
+    if not value then
+        stopFollow()
+    end
+end
+
+function Game.setFollowButtonVisible(value)
+    followButton.Visible = value
+end
+
+function Game.setFollowStopDistance(value)
+    followStopRange = value
+end
+
+-- FOV
+local camera = Workspace.CurrentCamera
+
+local function setFieldOfView(value)
+    local scale = math.clamp(value / 100, 0.1, 1.0)
+    camera.FieldOfView = 70 * (1 / scale)
+end
+
+Game.setFieldOfView = setFieldOfView
+
+-- Auto Catch (goleiro)
+local autoCatchEnabled  = false
+local autoCatchRange    = 10
+local autoCatchCooldown = 1
+local lastCatchTick     = 0
+local reduceCatchPush   = true
+
+local function counterCatchPush(root, humanoid)
+    if not reduceCatchPush then return end
+    task.spawn(function()
+        local start = tick()
+        while tick() - start < 0.12 do
+            if not root or not root.Parent then return end
+            if humanoid and humanoid.MoveDirection.Magnitude > 0.1 then return end
+            local velocity = root.AssemblyLinearVelocity
+            root.AssemblyLinearVelocity = Vector3.new(velocity.X * 0.1, velocity.Y, velocity.Z * 0.1)
+            task.wait()
+        end
+    end)
+end
+
+local function hasGoalkeeperTool()
+    local character = LocalPlayer.Character
+    if not character then return false end
+
+    local tool = character:FindFirstChildOfClass("Tool")
+    if not tool then return false end
+
+    return tool.Name == "GK" or tool.Name == "Gk"
+end
+
+task.spawn(function()
+    while true do
+        task.wait()
+        if autoCatchEnabled and hasGoalkeeperTool() then
+            if tick() - lastCatchTick >= autoCatchCooldown then
+                local character = LocalPlayer.Character
+                if character then
+                    local root = character:FindFirstChild("HumanoidRootPart")
+                    if root then
+                        for _, object in ipairs(Workspace:GetDescendants()) do
+                            if object.Name == "TPS" and (object:IsA("BasePart") or object:IsA("Model")) then
+                                local part = object:IsA("BasePart") and object
+                                    or (object.PrimaryPart or object:FindFirstChildWhichIsA("BasePart"))
+
+                                if part and (part.Position - root.Position).Magnitude <= autoCatchRange then
+                                    pcall(function()
+                                        ReplicatedStorage.CatchBall:FireServer(object)
+                                    end)
+                                    counterCatchPush(root, character:FindFirstChildOfClass("Humanoid"))
+                                    lastCatchTick = tick()
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+function Game.setAutoCatch(value)
+    autoCatchEnabled = value
+end
+
+function Game.setCatchRange(value)
+    autoCatchRange = value
+end
+
+function Game.setReducePush(value)
+    reduceCatchPush = value
+end
+
+-- Previsão de queda da bola (marcador 3D → preto)
+local predictEnabled = false
+local predictMarker  = nil
+
+local function hideMarker()
+    if predictMarker then
+        predictMarker:Destroy()
+        predictMarker = nil
+    end
+end
+
+local function getMarker()
+    if predictMarker and predictMarker.Parent then
+        return predictMarker
+    end
+
+    local marker = Instance.new("Part")
+    marker.Name         = "BinariumLanding"
+    marker.Shape        = Enum.PartType.Cylinder
+    marker.Size         = Vector3.new(0.2, 4, 4)
+    marker.Anchored     = true
+    marker.CanCollide   = false
+    marker.CanTouch     = false
+    marker.CanQuery     = false
+    marker.CastShadow   = false
+    marker.Material     = Enum.Material.Neon
+    marker.Color        = Color3.fromRGB(0, 0, 0)
+    marker.Transparency = 0.3
+    marker.Parent       = Workspace
+
+    predictMarker = marker
+    return marker
+end
+
+RunService.Heartbeat:Connect(function()
+    if not predictEnabled then return end
+
+    local character = LocalPlayer.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local ball = GetClosestBall(root)
+    if not ball or not ball.Parent then
+        hideMarker()
+        return
+    end
+
+    local velocity = ball.AssemblyLinearVelocity
+    if velocity.Magnitude < 2 then
+        hideMarker()
+        return
+    end
+
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = { character, ball, predictMarker }
+
+    local hit = Workspace:Raycast(ball.Position, Vector3.new(0, -500, 0), params)
+    local groundY = hit and hit.Position.Y or (root.Position.Y - 3)
+
+    local radius  = math.max(ball.Size.X, ball.Size.Y, ball.Size.Z) / 2
+    local height  = math.max(0, ball.Position.Y - groundY - radius)
+    local gravity = Workspace.Gravity
+
+    local discriminant = velocity.Y * velocity.Y + 2 * gravity * height
+    if discriminant < 0 then
+        hideMarker()
+        return
+    end
+
+    local timeToLand = (velocity.Y + math.sqrt(discriminant)) / gravity
+    local landing = Vector3.new(
+        ball.Position.X + velocity.X * timeToLand,
+        groundY + 0.1,
+        ball.Position.Z + velocity.Z * timeToLand
+    )
+
+    local marker = getMarker()
+    marker.CFrame = CFrame.new(landing) * CFrame.Angles(0, 0, math.rad(90))
+end)
+
+function Game.setPredict(value)
+    predictEnabled = value
+    if not value then
+        hideMarker()
+    end
+end
+
+-- Velocidade
+local walkSpeed = 16
+
+RunService.Heartbeat:Connect(function()
+    if walkSpeed == 16 then return end
+
+    local character = LocalPlayer.Character
+    if not character then return end
+
+    local root = character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not root or not humanoid then return end
+
+    local direction = humanoid.MoveDirection
+    if direction.Magnitude > 0.1 then
+        local velocity = root.AssemblyLinearVelocity
+        root.AssemblyLinearVelocity = Vector3.new(
+            direction.X * walkSpeed,
+            velocity.Y,
+            direction.Z * walkSpeed
+        )
+    end
+end)
+
+function Game.setSpeed(value)
+    walkSpeed = value
+end
+
+-- Skybox
+local lightingProps = { "ClockTime", "Brightness", "Ambient", "OutdoorAmbient", "FogColor", "FogEnd" }
+local savedLighting = nil
+local savedSkies    = {}
+local customSky     = nil
+
+local rainFolder     = nil
+local rainConnection = nil
+local rainSound      = nil
+
+local function stopRain()
+    if rainConnection then
+        rainConnection:Disconnect()
+        rainConnection = nil
+    end
+    if rainFolder then
+        rainFolder:Destroy()
+        rainFolder = nil
+    end
+    if rainSound then
+        rainSound:Destroy()
+        rainSound = nil
+    end
+end
+
+local function startRain()
+    stopRain()
+
+    rainFolder = Instance.new("Folder")
+    rainFolder.Name = "BinariumRain"
+    rainFolder.Parent = Workspace
+
+    local half   = 100
+    local height = 50
+    local fall   = 120
+    local drops  = {}
+
+    for i = 1, 50 do
+        local part = Instance.new("Part")
+        part.Size         = Vector3.new(0.05, 3, 0.05)
+        part.Anchored     = true
+        part.CanCollide   = false
+        part.CanQuery     = false
+        part.CanTouch     = false
+        part.CastShadow   = false
+        part.Material     = Enum.Material.SmoothPlastic
+        part.Color        = Color3.fromRGB(0, 0, 0)
+        part.Transparency = 0.5
+        part.Parent       = rainFolder
+
+        drops[i] = {
+            part = part,
+            x = math.random(-half, half),
+            y = math.random(0, height),
+            z = math.random(-half, half),
+        }
+    end
+
+    rainConnection = RunService.RenderStepped:Connect(function(dt)
+        local character = LocalPlayer.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        local center = root and root.Position or Vector3.zero
+
+        for _, drop in ipairs(drops) do
+            drop.y = drop.y - fall * dt
+            if drop.y < center.Y - 10 then
+                drop.y = center.Y + height
+                drop.x = math.random(-half, half)
+                drop.z = math.random(-half, half)
+            end
+            drop.part.Position = Vector3.new(center.X + drop.x, drop.y, center.Z + drop.z)
+        end
+    end)
+
+    rainSound = Instance.new("Sound")
+    rainSound.Name    = "BinariumRainAmbience"
+    rainSound.SoundId = "rbxassetid://365362615"
+    rainSound.Looped  = true
+    rainSound.Volume  = 0.4
+    rainSound.Parent  = Workspace
+    rainSound:Play()
+end
+
+local nightSky = {
+    Bk = "rbxassetid://4498828382",
+    Dn = "rbxassetid://4498828812",
+    Ft = "rbxassetid://4498829917",
+    Lf = "rbxassetid://4498830911",
+    Rt = "rbxassetid://4498830417",
+    Up = "rbxassetid://4498831746",
+}
+
+local skyPresets = {
+    ["Sol"] = {
+        Lighting = {
+            ClockTime = 7,
+            Brightness = 2,
+            OutdoorAmbient = Color3.fromRGB(0, 0, 0),
+            Ambient = Color3.fromRGB(8, 8, 8),
+            FogColor = Color3.fromRGB(0, 0, 0),
+            FogEnd = 100000,
+        },
+        Sky = {
+            Bk = "rbxassetid://541743453",
+            Dn = "rbxassetid://541743443",
+            Ft = "rbxassetid://541743446",
+            Lf = "rbxassetid://541743436",
+            Rt = "rbxassetid://541743435",
+            Up = "rbxassetid://541743441",
+        },
+    },
+    ["Lua"] = {
+        Lighting = {
+            ClockTime = 21,
+            Brightness = 1,
+            OutdoorAmbient = Color3.fromRGB(8, 8, 8),
+            Ambient = Color3.fromRGB(0, 0, 0),
+            FogColor = Color3.fromRGB(8, 8, 8),
+            FogEnd = 100000,
+        },
+        Sky = nightSky,
+    },
+    ["Chuva"] = {
+        Lighting = {
+            ClockTime = 21,
+            Brightness = 1,
+            OutdoorAmbient = Color3.fromRGB(0, 0, 0),
+            Ambient = Color3.fromRGB(8, 8, 8),
+            FogColor = Color3.fromRGB(0, 0, 0),
+            FogEnd = 100000,
+        },
+        Sky = nightSky,
+        Rain = true,
+    },
+}
+
+local function faceSet(bk, dn, ft, lf, rt, up)
+    return {
+        Bk = "rbxassetid://" .. bk,
+        Dn = "rbxassetid://" .. dn,
+        Ft = "rbxassetid://" .. ft,
+        Lf = "rbxassetid://" .. lf,
+        Rt = "rbxassetid://" .. rt,
+        Up = "rbxassetid://" .. up,
+    }
+end
+
+skyPresets["Dark Sky"] = {
+    Lighting = {}, Celestial = false,
+    Sky = faceSet(570555736, 570555964, 570555800, 570555840, 570555882, 570555929),
+}
+skyPresets["Art Mountain"] = {
+    Lighting = {}, Celestial = false,
+    Sky = faceSet(2128458653, 2128462480, 2128458653, 2128462027, 2128462027, 2128462236),
+}
+skyPresets["Vaporwave"] = {
+    Lighting = {}, Celestial = false,
+    Sky = faceSet(1417494030, 1417494146, 1417494253, 1417494402, 1417494499, 1417494643),
+}
+skyPresets["Nebula"] = {
+    Lighting = {}, Celestial = false,
+    Sky = faceSet(159454299, 159454296, 159454293, 159454286, 159454300, 159454288),
+}
+skyPresets["Twilight"] = {
+    Lighting = {}, Celestial = false,
+    Sky = faceSet(264908339, 264907909, 264909420, 264909758, 264908886, 264907379),
+}
+skyPresets["Lake Sky"] = {
+    Lighting = {}, Celestial = true, Sun = "rbxassetid://5392574622",
+    Sky = faceSet(6823523318, 6823525702, 6823482923, 6823530023, 6823531746, 6823528533),
+}
+skyPresets["Alien Red"] = {
+    Lighting = {}, Celestial = false,
+    Sky = faceSet(7123385217, 7123387679, 7123390433, 7123394786, 7123402505, 7123412196),
+}
+skyPresets["Black Mesa"] = {
+    Lighting = {}, Celestial = false,
+    Sky = faceSet(9569742122, 9569613307, 9569611418, 9569608166, 9569601267, 9569598752),
+}
+skyPresets["Clouds"] = {
+    Lighting = {}, Celestial = false,
+    Sky = faceSet(570557514, 570557775, 570557559, 570557620, 570557672, 570557727),
+}
+
+skyPresets["Entardecer"] = {
+    Lighting = {
+        ClockTime = 17.8,
+        Brightness = 1.6,
+        OutdoorAmbient = Color3.fromRGB(0, 0, 0),
+        Ambient = Color3.fromRGB(8, 8, 8),
+        FogColor = Color3.fromRGB(0, 0, 0),
+        FogEnd = 100000,
+    },
+    Sky = skyPresets["Sol"].Sky,
+}
+skyPresets["Amanhecer"] = {
+    Lighting = {
+        ClockTime = 5.8,
+        Brightness = 1.5,
+        OutdoorAmbient = Color3.fromRGB(8, 8, 8),
+        Ambient = Color3.fromRGB(0, 0, 0),
+        FogColor = Color3.fromRGB(8, 8, 8),
+        FogEnd = 100000,
+    },
+    Sky = skyPresets["Sol"].Sky,
+}
+skyPresets["Noite estrelada"] = {
+    Lighting = {
+        ClockTime = 0,
+        Brightness = 0.8,
+        OutdoorAmbient = Color3.fromRGB(0, 0, 0),
+        Ambient = Color3.fromRGB(8, 8, 8),
+        FogColor = Color3.fromRGB(0, 0, 0),
+        FogEnd = 100000,
+    },
+    Sky = nightSky,
+}
+skyPresets["Neon Roxo"] = {
+    Lighting = {
+        ClockTime = 0,
+        Brightness = 1.5,
+        OutdoorAmbient = Color3.fromRGB(8, 8, 8),
+        Ambient = Color3.fromRGB(0, 0, 0),
+        FogColor = Color3.fromRGB(8, 8, 8),
+        FogEnd = 100000,
+    },
+    Celestial = false,
+    Sky = skyPresets["Nebula"].Sky,
+}
+skyPresets["Neblina"] = {
+    Lighting = {
+        ClockTime = 12,
+        Brightness = 1.5,
+        OutdoorAmbient = Color3.fromRGB(0, 0, 0),
+        Ambient = Color3.fromRGB(8, 8, 8),
+        FogColor = Color3.fromRGB(0, 0, 0),
+        FogEnd = 400,
+    },
+    Celestial = false,
+    Sky = skyPresets["Clouds"].Sky,
+}
+skyPresets["Tempestade"] = {
+    Lighting = {
+        ClockTime = 22,
+        Brightness = 0.6,
+        OutdoorAmbient = Color3.fromRGB(0, 0, 0),
+        Ambient = Color3.fromRGB(8, 8, 8),
+        FogColor = Color3.fromRGB(0, 0, 0),
+        FogEnd = 800,
+    },
+    Sky = nightSky,
+    Rain = true,
+}
+skyPresets["Padrão Roblox"] = {
+    Lighting = {},
+    Sky = {
+        Bk = "rbxasset://textures/sky/sky512_bk.tex",
+        Dn = "rbxasset://textures/sky/sky512_dn.tex",
+        Ft = "rbxasset://textures/sky/sky512_ft.tex",
+        Lf = "rbxasset://textures/sky/sky512_lf.tex",
+        Rt = "rbxasset://textures/sky/sky512_rt.tex",
+        Up = "rbxasset://textures/sky/sky512_up.tex",
+    },
+}
+
+local function singleSky(id)
+    return faceSet(id, id, id, id, id, id)
+end
+
+skyPresets["Monika"]       = { Lighting = {}, Celestial = false, Sky = singleSky(1890511151) }
+skyPresets["Sakura"]       = { Lighting = {}, Celestial = false, Sky = singleSky(2602753108) }
+skyPresets["Hatsune Miku"] = { Lighting = {}, Celestial = false, Sky = singleSky(2810233801) }
+skyPresets["Cartoon"]      = { Lighting = {}, Celestial = false, Sky = singleSky(15114954171) }
+
+Game.skyList = {
+    "Padrão", "Sol", "Lua", "Chuva", "Dark Sky", "Art Mountain", "Vaporwave",
+    "Nebula", "Twilight", "Lake Sky", "Alien Red", "Black Mesa", "Clouds",
+    "Entardecer", "Amanhecer", "Noite estrelada", "Neon Roxo", "Neblina",
+    "Tempestade", "Padrão Roblox",
+    "Monika", "Sakura", "Hatsune Miku", "Cartoon",
+}
+
+local function saveOriginalSky()
+    if savedLighting then return end
+    savedLighting = {}
+    for _, prop in ipairs(lightingProps) do
+        savedLighting[prop] = Lighting[prop]
+    end
+end
+
+local function restoreLighting()
+    if savedLighting then
+        for prop, value in pairs(savedLighting) do
+            Lighting[prop] = value
+        end
+    end
+end
+
+local function removeCustomSky()
+    stopRain()
+    if customSky then
+        customSky:Destroy()
+        customSky = nil
+    end
+end
+
+function Game.applySky(name)
+    if name == "Padrão" then
+        removeCustomSky()
+        for _, sky in ipairs(savedSkies) do
+            sky.Parent = Lighting
+        end
+        savedSkies = {}
+        restoreLighting()
+        return
+    end
+
+    local preset = skyPresets[name]
+    if not preset then return end
+
+    saveOriginalSky()
+    removeCustomSky()
+
+    for _, child in ipairs(Lighting:GetChildren()) do
+        if child:IsA("Sky") then
+            table.insert(savedSkies, child)
+            child.Parent = nil
+        end
+    end
+
+    restoreLighting()
+    for prop, value in pairs(preset.Lighting) do
+        Lighting[prop] = value
+    end
+
+    local sky = Instance.new("Sky")
+    sky.Name = "BinariumSky"
+    sky.SkyboxBk = preset.Sky.Bk
+    sky.SkyboxDn = preset.Sky.Dn
+    sky.SkyboxFt = preset.Sky.Ft
+    sky.SkyboxLf = preset.Sky.Lf
+    sky.SkyboxRt = preset.Sky.Rt
+    sky.SkyboxUp = preset.Sky.Up
+    sky.CelestialBodiesShown = preset.Celestial ~= false
+    if preset.Sun then
+        sky.SunTextureId = preset.Sun
+    end
+    sky.Parent = Lighting
+    customSky = sky
+
+    if preset.Rain then
+        startRain()
+    end
+end
+
+-- Skyboxes personalizadas
+local customSkyFile = "BinariumHub/skyboxes.json"
+local customSkies   = {}
+
+local function fileSupport()
+    return writefile and readfile and isfile and makefolder and isfolder
+end
+
+local function saveCustomSkies()
+    if not fileSupport() then return false end
+    local ok = pcall(function()
+        if not isfolder("BinariumHub") then
+            makefolder("BinariumHub")
+        end
+        writefile(customSkyFile, HttpService:JSONEncode(customSkies))
+    end)
+    return ok
+end
+
+local function loadCustomSkies()
+    if not fileSupport() or not isfile(customSkyFile) then return end
+
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(readfile(customSkyFile))
+    end)
+    if not ok or type(data) ~= "table" then return end
+
+    for name, faces in pairs(data) do
+        if type(name) == "string" and type(faces) == "table" and #faces == 6 then
+            customSkies[name] = faces
+        end
+    end
+end
+
+local function sortedSkyNames()
+    local names = {}
+    for name in pairs(customSkies) do
+        table.insert(names, name)
+    end
+    table.sort(names)
+    return names
+end
+
+local function parseSkyIds(text)
+    local ids = {}
+    for token in tostring(text or ""):gmatch("%d+") do
+        if #token >= 5 then
+            table.insert(ids, token)
+        end
+    end
+
+    if #ids == 1 then
+        return { ids[1], ids[1], ids[1], ids[1], ids[1], ids[1] }
+    end
+    if #ids == 6 then
+        return ids
+    end
+    return nil
+end
+
+local function applyCustomSky(faces)
+    saveOriginalSky()
+    removeCustomSky()
+    restoreLighting()
+
+    for _, child in ipairs(Lighting:GetChildren()) do
+        if child:IsA("Sky") then
+            table.insert(savedSkies, child)
+            child.Parent = nil
+        end
+    end
+
+    local sky = Instance.new("Sky")
+    sky.Name = "BinariumSky"
+    sky.SkyboxBk = "rbxassetid://" .. faces[1]
+    sky.SkyboxDn = "rbxassetid://" .. faces[2]
+    sky.SkyboxFt = "rbxassetid://" .. faces[3]
+    sky.SkyboxLf = "rbxassetid://" .. faces[4]
+    sky.SkyboxRt = "rbxassetid://" .. faces[5]
+    sky.SkyboxUp = "rbxassetid://" .. faces[6]
+    sky.CelestialBodiesShown = false
+    sky.Parent = Lighting
+    customSky = sky
+end
+
+loadCustomSkies()
+
+Game.parseSkyIds = parseSkyIds
+Game.applyCustomSky = applyCustomSky
+Game.sortedSkyNames = sortedSkyNames
+
+function Game.getCustomSky(name)
+    return customSkies[name]
+end
+
+function Game.saveCustomSky(name, faces)
+    customSkies[name] = faces
+    return saveCustomSkies()
+end
+
+function Game.deleteCustomSky(name)
+    if not name or not customSkies[name] then return false end
+    customSkies[name] = nil
+    saveCustomSkies()
+    return true
+end
+
+-- Skins da bola (objetos 3D → preto)
+local ballSkins = {
+    ["Champions Laranja"] = {
+        Texture = "http://www.roblox.com/asset/?id=6631296730",
+        Mesh    = "rbxassetid://4545270159",
+    },
+    ["Champions Azul"] = {
+        Texture = "rbxassetid://8108082224",
+        Mesh    = "rbxassetid://4454597214",
+    },
+    ["Champions Branca"] = {
+        Texture = "http://www.roblox.com/asset/?id=7897839361",
+        Mesh    = "rbxassetid://4761031195",
+    },
+}
+
+ballSkins["Neon Roxo"]   = { Color = Color3.fromRGB(0, 0, 0),  Material = Enum.Material.Neon }
+ballSkins["Ouro"]        = { Color = Color3.fromRGB(8, 8, 8),  Material = Enum.Material.Metal }
+ballSkins["Gelo"]        = { Color = Color3.fromRGB(0, 0, 0),  Material = Enum.Material.Ice }
+ballSkins["Lava"]        = { Color = Color3.fromRGB(8, 8, 8),  Material = Enum.Material.Neon }
+ballSkins["Esmeralda"]   = { Color = Color3.fromRGB(0, 0, 0),  Material = Enum.Material.Neon }
+ballSkins["Preto fosco"] = { Color = Color3.fromRGB(8, 8, 8),  Material = Enum.Material.SmoothPlastic }
+
+Game.skinList = {
+    "Original", "Champions Laranja", "Champions Azul", "Champions Branca",
+    "Neon Roxo", "Ouro", "Gelo", "Lava", "Esmeralda", "Preto fosco",
+}
+
+local currentBallSkin = nil
+local originalBalls   = {}
+
+local function applySkinToBall(part, skin)
+    pcall(function()
+        if not originalBalls[part] then
+            local data = { Decals = {}, Surfaces = {}, Color = part.Color, Material = part.Material }
+
+            if part:IsA("MeshPart") then
+                data.MeshId    = part.MeshId
+                data.TextureID = part.TextureID
+            else
+                local mesh = part:FindFirstChildOfClass("SpecialMesh")
+                if mesh then
+                    data.Mesh = {
+                        MeshId    = mesh.MeshId,
+                        TextureId = mesh.TextureId,
+                        MeshType  = mesh.MeshType,
+                    }
+                end
+            end
+
+            for _, child in ipairs(part:GetChildren()) do
+                if child:IsA("Decal") or child:IsA("Texture") then
+                    data.Decals[child] = {
+                        Texture      = child.Texture,
+                        Transparency = child.Transparency,
+                    }
+                end
+            end
+
+            originalBalls[part] = data
+        end
+
+        for _, child in ipairs(part:GetChildren()) do
+            if child:IsA("SurfaceAppearance") then
+                table.insert(originalBalls[part].Surfaces, child)
+                child.Parent = nil
+            end
+        end
+
+        if skin.Color then
+            part.Color = skin.Color
+            part.Material = skin.Material or Enum.Material.SmoothPlastic
+
+            if part:IsA("MeshPart") then
+                part.TextureID = ""
+            else
+                local flatMesh = part:FindFirstChildOfClass("SpecialMesh")
+                if flatMesh then
+                    flatMesh.TextureId = ""
+                end
+            end
+
+            for _, child in ipairs(part:GetChildren()) do
+                if child:IsA("Decal") or child:IsA("Texture") then
+                    child.Transparency = 1
+                end
+            end
+
+            return
+        end
+
+        part.Color = Color3.fromRGB(0, 0, 0)
+        part.Material = originalBalls[part].Material
+
+        if part:IsA("MeshPart") then
+            if skin.Mesh then
+                part.MeshId = skin.Mesh
+            end
+            part.TextureID = skin.Texture
+        else
+            local mesh = part:FindFirstChildOfClass("SpecialMesh")
+            if not mesh and skin.Mesh then
+                mesh = Instance.new("SpecialMesh")
+                mesh.Name = "BinariumSkinMesh"
+                mesh.Parent = part
+                originalBalls[part].CreatedMesh = true
+            end
+            if mesh then
+                if skin.Mesh then
+                    mesh.MeshType = Enum.MeshType.FileMesh
+                    mesh.MeshId   = skin.Mesh
+                end
+                mesh.TextureId = skin.Texture
+            end
+        end
+
+        for _, child in ipairs(part:GetChildren()) do
+            if child:IsA("Decal") or child:IsA("Texture") then
+                child.Texture = skin.Texture
+                child.Transparency = 0
+            end
+        end
+    end)
+end
+
+local function restoreBall(part)
+    local data = originalBalls[part]
+    if not data then return end
+
+    pcall(function()
+        if data.Color then
+            part.Color = data.Color
+            part.Material = data.Material
+        end
+
+        for _, surface in ipairs(data.Surfaces or {}) do
+            surface.Parent = part
+        end
+
+        if part:IsA("MeshPart") then
+            if data.MeshId then part.MeshId = data.MeshId end
+            if data.TextureID then part.TextureID = data.TextureID end
+        else
+            local mesh = part:FindFirstChildOfClass("SpecialMesh")
+            if mesh then
+                if data.CreatedMesh then
+                    mesh:Destroy()
+                elseif data.Mesh then
+                    mesh.MeshType  = data.Mesh.MeshType
+                    mesh.MeshId    = data.Mesh.MeshId
+                    mesh.TextureId = data.Mesh.TextureId
+                end
+            end
+        end
+
+        for decal, props in pairs(data.Decals) do
+            if decal.Parent then
+                decal.Texture = props.Texture
+                decal.Transparency = props.Transparency
+            end
+        end
+    end)
+
+    originalBalls[part] = nil
+end
+
+function Game.applyBallSkin(name)
+    if name == "Original" then
+        currentBallSkin = nil
+        for part in pairs(originalBalls) do
+            restoreBall(part)
+        end
+        return
+    end
+
+    local skin = ballSkins[name]
+    if not skin then return end
+
+    currentBallSkin = skin
+    for part in pairs(BallCandidates) do
+        if part.Parent then
+            applySkinToBall(part, skin)
+        end
+    end
+end
+
+-- Skins de bola personalizadas
+local customBallFile  = "BinariumHub/ballskins.json"
+local customBallSkins = {}
+
+local function saveCustomBallSkins()
+    if not fileSupport() then return false end
+    local ok = pcall(function()
+        if not isfolder("BinariumHub") then
+            makefolder("BinariumHub")
+        end
+        writefile(customBallFile, HttpService:JSONEncode(customBallSkins))
+    end)
+    return ok
+end
+
+local function loadCustomBallSkins()
+    if not fileSupport() or not isfile(customBallFile) then return end
+
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(readfile(customBallFile))
+    end)
+    if not ok or type(data) ~= "table" then return end
+
+    for name, skin in pairs(data) do
+        if type(name) == "string" and type(skin) == "table" and type(skin.Texture) == "string" then
+            customBallSkins[name] = skin
+        end
+    end
+end
+
+loadCustomBallSkins()
+
+function Game.parseBallId(text)
+    return tostring(text or ""):match("%d%d%d%d%d+")
+end
+
+function Game.sortedBallSkinNames()
+    local names = {}
+    for name in pairs(customBallSkins) do
+        table.insert(names, name)
+    end
+    table.sort(names)
+    return names
+end
+
+function Game.getCustomBallSkin(name)
+    return customBallSkins[name]
+end
+
+function Game.saveCustomBallSkin(name, texture, mesh)
+    customBallSkins[name] = { Texture = texture, Mesh = mesh }
+    return saveCustomBallSkins()
+end
+
+function Game.deleteCustomBallSkin(name)
+    if not name or not customBallSkins[name] then return false end
+    customBallSkins[name] = nil
+    saveCustomBallSkins()
+    return true
+end
+
+function Game.applyCustomBallSkin(texture, mesh)
+    local skin = {
+        Texture = "http://www.roblox.com/asset/?id=" .. texture,
+        Mesh    = mesh and ("rbxassetid://" .. mesh) or nil,
+    }
+
+    currentBallSkin = skin
+    for part in pairs(BallCandidates) do
+        if part.Parent then
+            applySkinToBall(part, skin)
+        end
+    end
+end
+
+Workspace.DescendantAdded:Connect(function(obj)
+    if currentBallSkin and IsBall(obj) then
+        task.defer(function()
+            if obj.Parent and currentBallSkin then
+                applySkinToBall(obj, currentBallSkin)
+            end
+        end)
+    end
+end)
+
+-- Auto Dive
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Debris = game:GetService("Debris")
+
+local diveKeys = {
+    center_high = Enum.KeyCode.T,
+    center_low  = Enum.KeyCode.F,
+    left_high   = Enum.KeyCode.Q,
+    left_low    = Enum.KeyCode.Z,
+    right_high  = Enum.KeyCode.E,
+    right_low   = Enum.KeyCode.C,
+}
+
+local diveConfig = {
+    enabled = false,
+    range   = 15,
+    mode    = "Mergulho próprio",
+}
+local diving       = false
+local lastDiveTick = 0
+local diveCooldown = 1
+local sideDeadzone   = 1.5
+local heightThreshold = 1.5
+local nearJumpRange  = 8
+local nearJumpHeight = 2
+local markerRange      = 6
+local frontHeightLimit = 1.5
+
+local function groundY(character, root, humanoid)
+    local hipHeight = (humanoid and humanoid.HipHeight) or 2
+    return root.Position.Y - hipHeight
+end
+
+local function pressDiveKey(keyCode)
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+        task.wait(0.05)
+        VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+    end)
+end
+
+local diveChecks = { team = false, tool = true, ball = false }
+local goalkeeperTeamNames = { "Home GK", "Away GK", "-Home GK", "-Away GK" }
+
+local function passesChecks()
+    if diveChecks.team then
+        local team = LocalPlayer.Team
+
+        if not team or not table.find(goalkeeperTeamNames, team.Name) then
+            return false
+        end
+    end
+
+    if diveChecks.tool and not hasGoalkeeperTool() then
+        return false
+    end
+
+    return true
+end
+
+local function isBallHeld(ball)
+    local character = LocalPlayer.Character
+    if not character then return false end
+
+    if ball:IsDescendantOf(character) then
+        return true
+    end
+
+    for _, child in ipairs(ball:GetChildren()) do
+        if child:IsA("Weld") or child:IsA("WeldConstraint") or child:IsA("Motor6D") then
+            local part0, part1 = child.Part0, child.Part1
+
+            if (part0 and part0:IsDescendantOf(character)) or (part1 and part1:IsDescendantOf(character)) then
+                return true
+            end
+        end
+    end
+
+    for _, armName in ipairs(reachArmNames) do
+        local arm = character:FindFirstChild(armName)
+
+        if arm and arm:IsA("BasePart") and (arm.Position - ball.Position).Magnitude <= 3 then
             return true
         end
     end
@@ -212,593 +1893,3053 @@ local function IsManualMoving()
     return false
 end
 
-local function IsSkillPlaying()
-    if Humanoid then
-        local animator = Humanoid:FindFirstChildOfClass("Animator")
-        if animator then
-            for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                local name = track.Name:lower()
-                if name:find("skill") or name:find("dribble") or name:find("fake") or name:find("shoot") or name:find("head") or name:find("rainbow") or name:find("lambreta") then
-                    return true
+RunService.Heartbeat:Connect(function()
+    if not diveConfig.enabled then return end
+    if diveConfig.mode ~= "Teclas do jogo" then return end
+    if not passesChecks() then return end
+    if diving then return end
+    if tick() - lastDiveTick < diveCooldown then return end
+
+    local character = LocalPlayer.Character
+    if not character then return end
+
+    local root = character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not root or not humanoid or humanoid.Health <= 0 then return end
+
+    local ball = GetClosestBall(root)
+    if not ball or not ball.Parent then return end
+
+    local offset = ball.Position - root.Position
+    local distance = offset.Magnitude
+    if distance > diveConfig.range then return end
+
+    local heightValue = ball.Position.Y - groundY(character, root, humanoid)
+
+    if distance <= nearJumpRange and heightValue > nearJumpHeight then
+        diving = true
+        lastDiveTick = tick()
+        pcall(function()
+            humanoid.Jump = true
+        end)
+        task.delay(diveCooldown, function()
+            diving = false
+        end)
+        return
+    end
+
+    local camera = Workspace.CurrentCamera
+    local cameraCFrame = camera and camera.CFrame or root.CFrame
+
+    local inFront = offset:Dot(cameraCFrame.LookVector) > 0
+    if inFront and heightValue <= frontHeightLimit then
+        local markerNearby = false
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local otherRoot = player.Character:FindFirstChild("HumanoidRootPart")
+                if otherRoot and (otherRoot.Position - ball.Position).Magnitude <= markerRange then
+                    markerNearby = true
+                    break
                 end
             end
         end
+
+        if markerNearby then
+            diving = true
+            lastDiveTick = tick()
+            pressDiveKey(Enum.KeyCode.H)
+            task.delay(diveCooldown, function()
+                diving = false
+            end)
+            return
+        end
     end
+
+    if ball.AssemblyLinearVelocity.Magnitude < 8 then return end
+
+    local sideValue = offset:Dot(cameraCFrame.RightVector)
+
+    local side = "center"
+    if sideValue > sideDeadzone then
+        side = "right"
+    elseif sideValue < -sideDeadzone then
+        side = "left"
+    end
+
+    local height = (heightValue > heightThreshold) and "high" or "low"
+    local keyCode = diveKeys[side .. "_" .. height]
+
+    diving = true
+    lastDiveTick = tick()
+
+    pressDiveKey(keyCode)
+
+    task.delay(diveCooldown, function()
+        diving = false
+    end)
+end)
+
+
+-- Mergulho próprio
+do
+    local diveAnimations = {
+        rightLow = "rbxassetid://16442628314",
+        leftLow  = "rbxassetid://16442673035",
+        rightMid = "rbxassetid://100418595302523",
+        leftMid  = "rbxassetid://97922133636415",
+    }
+
+    local own = {
+        busy = false,
+        last = 0,
+        delay = 1,
+        duration = 0.7,
+        sideSpeed = 32,
+        lowLift = 1.8,
+        highLift = 3.5,
+        minBallSpeed = 8,
+        deadzone = 0.25,
+        lowLimit = 5,
+        midLimit = 10,
+        catchLast = 0,
+        catchCooldown = 0.08,
+        catchReach = 8,
+        predictTime = 0.25,
+    }
+
+    local function findBall(root)
+        local best = nil
+        local bestDistance = diveConfig.range
+
+        for part in pairs(BallCandidates) do
+            if part.Parent and not isBallHeld(part) then
+                local distance = (part.Position - root.Position).Magnitude
+
+                if distance < bestDistance then
+                    bestDistance = distance
+                    best = part
+                end
+            end
+        end
+
+        return best
+    end
+
+    local function classify(ball, root)
+        local velocity = ball.AssemblyLinearVelocity
+
+        if velocity.Magnitude < own.minBallSpeed then
+            return nil
+        end
+
+        local toRoot = root.Position - ball.Position
+
+        if toRoot.Magnitude <= 0 then
+            return nil
+        end
+
+        if velocity.Unit:Dot(toRoot.Unit) < 0.35 then
+            return nil
+        end
+
+        local offset = ball.Position - root.Position
+        local sideValue = offset:Dot(root.CFrame.RightVector)
+        local frontValue = offset:Dot(root.CFrame.LookVector)
+        local heightDiff = ball.Position.Y - root.Position.Y
+
+        local height = "High"
+
+        if heightDiff <= own.lowLimit then
+            height = "Low"
+        elseif heightDiff <= own.midLimit then
+            height = "Mid"
+        end
+
+        if math.abs(sideValue) <= own.deadzone and frontValue > 0 then
+            return "Front", height
+        end
+
+        if sideValue > own.deadzone then
+            return "Right", height
+        end
+
+        if sideValue < -own.deadzone then
+            return "Left", height
+        end
+
+        return nil
+    end
+
+    local function tryCatch(ball)
+        if not ball or not ball.Parent then return end
+
+        local character = LocalPlayer.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+
+        local now = os.clock()
+        if now - own.catchLast < own.catchCooldown then return end
+
+        local distance = (ball.Position - root.Position).Magnitude
+        local predicted = (ball.Position + ball.AssemblyLinearVelocity * own.predictTime - root.Position).Magnitude
+
+        if distance > own.catchReach and predicted > own.catchReach then return end
+
+        local remote = ReplicatedStorage:FindFirstChild("CatchBall")
+
+        if remote and remote:IsA("RemoteEvent") then
+            own.catchLast = now
+            remote:FireServer(ball)
+        end
+    end
+
+    local function playAnimation(humanoid, animationId)
+        local animator = humanoid:FindFirstChildOfClass("Animator")
+
+        if not animator then
+            animator = Instance.new("Animator")
+            animator.Parent = humanoid
+        end
+
+        local animation = Instance.new("Animation")
+        animation.AnimationId = animationId
+
+        local track = nil
+
+        pcall(function()
+            track = animator:LoadAnimation(animation)
+        end)
+
+        animation:Destroy()
+
+        if track then
+            track:Play()
+
+            task.delay(own.duration, function()
+                pcall(function()
+                    track:Stop()
+                    track:Destroy()
+                end)
+            end)
+        end
+    end
+
+    local function performDive(ball, direction, height, humanoid, root)
+        own.busy = true
+        own.last = os.clock()
+
+        local camera = Workspace.CurrentCamera
+
+        if camera then
+            local look = camera.CFrame.LookVector
+            root.CFrame = CFrame.new(root.Position, root.Position + Vector3.new(look.X, 0, look.Z))
+        end
+
+        root.AssemblyAngularVelocity = Vector3.zero
+
+        local velocity = Instance.new("BodyVelocity")
+        velocity.Parent = root
+
+        local sideVector = root.CFrame.RightVector * own.sideSpeed
+
+        if direction ~= "Right" then
+            sideVector = -sideVector
+        end
+
+        local lift = root.CFrame.UpVector * ((height == "Low") and own.lowLift or own.highLift)
+
+        velocity.Velocity = sideVector + lift
+        velocity.MaxForce = Vector3.new(math.huge, 9999, math.huge)
+        Debris:AddItem(velocity, own.duration)
+
+        local animationKey = ((direction == "Right") and "right" or "left")
+            .. ((height == "Low") and "Low" or "Mid")
+
+        playAnimation(humanoid, diveAnimations[animationKey])
+
+        local started = os.clock()
+
+        task.spawn(function()
+            while os.clock() - started < own.duration do
+                tryCatch(ball)
+                RunService.Heartbeat:Wait()
+            end
+        end)
+
+        task.delay(own.duration, function()
+            own.busy = false
+        end)
+    end
+
+    RunService.Heartbeat:Connect(function()
+        if not diveConfig.enabled or diveConfig.mode ~= "Mergulho próprio" then return end
+        if own.busy then return end
+        if os.clock() - own.last < own.delay then return end
+        if not passesChecks() then return end
+
+        local character = LocalPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+
+        if not humanoid or not root or humanoid.Health <= 0 then return end
+
+        local ball = findBall(root)
+        if not ball then return end
+
+        local direction, height = classify(ball, root)
+
+        if not direction or direction == "Front" then return end
+
+        performDive(ball, direction, height, humanoid, root)
+    end)
+
+    function Game.setDiveDelay(value)
+        own.delay = value
+        diveCooldown = value
+    end
+end
+
+-- Ball Check
+local function isBallNearLegs()
+    local character = LocalPlayer.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    local ball = root and GetClosestBall(root)
+
+    if not ball then return false end
+
+    local names = { "HumanoidRootPart" }
+
+    for _, legName in ipairs(reachLegNames) do
+        table.insert(names, legName)
+    end
+
+    for _, partName in ipairs(names) do
+        local part = character:FindFirstChild(partName)
+
+        if part and part:IsA("BasePart") and (part.Position - ball.Position).Magnitude <= 10 then
+            return true
+        end
+    end
+
     return false
 end
 
--- ====================================================================
--- 4. INTERCEPTADOR ANTI-BUG
--- ====================================================================
-local rawnamecall
-rawnamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
+RunService.Heartbeat:Connect(function()
+    if not diveChecks.ball or not diveConfig.enabled then return end
 
-    if not checkcaller() and self == Humanoid and (method == "MoveTo" or method == "moveTo") then
-        local targetPos = args[1]
-        if typeof(targetPos) == "Vector3" then
-            if (targetPos - TargetCenter).Magnitude <= CenterTolerance or targetPos == Vector3.zero then
-                return nil
-            end
-        end
-    end
+    if isBallNearLegs() then
+        diveConfig.enabled = false
+        diving = false
 
-    return rawnamecall(self, ...)
-end)
-
--- ====================================================================
--- 5. LOOPS PRINCIPAIS
--- ====================================================================
-RunService.RenderStepped:Connect(function()
-    if not RootPart or not RootPart.Parent or not Humanoid then return end
-    local ball = GetClosestBall()
-
-    if AutoFollowEnabled and ball then
-        local manualMove = IsManualMoving()
-        local doingSkill = IsSkillPlaying()
-
-        if not manualMove and not doingSkill then
-            local ballPos = ball.Position
-            local myPos = RootPart.Position
-            local targetVector = Vector3.new(ballPos.X, myPos.Y, ballPos.Z)
-            local distance = (targetVector - myPos).Magnitude
-
-            if distance > FollowDistance then
-                local moveDirection = (targetVector - myPos).Unit
-                Humanoid:Move(moveDirection, false)
-            end
-        end
-    end
-
-    if ReachEnabled and ball then
-        local distance = (ball.Position - RootPart.Position).Magnitude
-        local reachStuds = ReachDistance * 5.0
-
-        if distance <= reachStuds then
-            firetouchinterest(RootPart, ball, 0)
-            firetouchinterest(RootPart, ball, 1)
-
-            for _, part in ipairs(Character:GetChildren()) do
-                if part:IsA("BasePart") then
-                    firetouchinterest(part, ball, 0)
-                    firetouchinterest(part, ball, 1)
-                end
-            end
-
-            for _, child in ipairs(ball:GetChildren()) do
-                if child:IsA("TouchTransmitter") then
-                    firetouchinterest(RootPart, ball, 0)
-                    firetouchinterest(RootPart, ball, 1)
-                end
-            end
+        if Game.onDiveOff then
+            Game.onDiveOff()
         end
     end
 end)
 
+function Game.setDive(value)
+    diveConfig.enabled = value
+end
 
--- ====================================================================
--- 6. BINARIUM BLACK & WHITE UI
--- ====================================================================
+function Game.setDiveRange(value)
+    diveConfig.range = value
+end
 
-local WHITE = Color3.fromRGB(245, 245, 245)
-local BLACK = Color3.fromRGB(8, 8, 8)
-local PANEL = Color3.fromRGB(17, 17, 17)
-local CARD = Color3.fromRGB(25, 25, 25)
-local MUTED = Color3.fromRGB(135, 135, 135)
-local BORDER = Color3.fromRGB(43, 43, 43)
+function Game.setDiveMode(value)
+    diveConfig.mode = value
+end
 
--- BOTÃO FLUTUANTE FOLLOW
-local FloatButton = Instance.new("TextButton")
-FloatButton.Name = "AutoBallFloatBtn"
-FloatButton.Parent = ScreenGui
-FloatButton.BackgroundColor3 = BLACK
-FloatButton.Position = UDim2.new(0.84, 0, 0.2, 0)
-FloatButton.Size = UDim2.new(0, 115, 0, 38)
-FloatButton.Font = Enum.Font.GothamBold
-FloatButton.Text = "FOLLOW  OFF"
-FloatButton.TextColor3 = MUTED
-FloatButton.TextSize = 11
-FloatButton.AutoButtonColor = false
+function Game.setDiveCheck(name, value)
+    diveChecks[name] = value
+end
 
-local FloatCorner = Instance.new("UICorner", FloatButton)
-FloatCorner.CornerRadius = UDim.new(0, 9)
 
-local FloatStroke = Instance.new("UIStroke", FloatButton)
-FloatStroke.Color = BORDER
-FloatStroke.Thickness = 1.3
+-- Auto Hambolo
+do
+    local hambolo = { enabled = false, distance = 20, interval = 0.1 }
 
-MakeDraggable(FloatButton)
+    local function hasTackleTool()
+        local character = LocalPlayer.Character
+        local tool = character and character:FindFirstChildOfClass("Tool")
 
-local function UpdateFollowButton()
-    if AutoFollowEnabled then
-        FloatButton.Text = "FOLLOW  ON"
-        FloatButton.TextColor3 = WHITE
-        FloatStroke.Color = WHITE
-    else
-        FloatButton.Text = "FOLLOW  OFF"
-        FloatButton.TextColor3 = MUTED
-        FloatStroke.Color = BORDER
+        return tool ~= nil and tool.Name == "Tackle"
+    end
+
+    task.spawn(function()
+        while true do
+            task.wait(0.05)
+
+            if hambolo.enabled and hasTackleTool() then
+                local character = LocalPlayer.Character
+                local root = character and character:FindFirstChild("HumanoidRootPart")
+                local ball = root and GetClosestBall(root)
+
+                if ball and (ball.Position - root.Position).Magnitude <= hambolo.distance then
+                    pcall(function()
+                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+                    end)
+
+                    task.wait(hambolo.interval)
+
+                    pcall(function()
+                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+                    end)
+                end
+            end
+        end
+    end)
+
+    function Game.setHambolo(value)
+        hambolo.enabled = value
+    end
+
+    function Game.setHamboloDistance(value)
+        hambolo.distance = value
     end
 end
 
-FloatButton.MouseButton1Click:Connect(function()
-    AutoFollowEnabled = not AutoFollowEnabled
-    UpdateFollowButton()
-end)
+-- Shield da bola
+do
+    local shield = { enabled = false, studs = 5 }
 
+    task.spawn(function()
+        while true do
+            task.wait(0.1)
+
+            if shield.enabled then
+                local ownerRemote = ReplicatedStorage:FindFirstChild("ChangeOwner")
+                local valueRemote = ReplicatedStorage:FindFirstChild("ChangeValue")
+                local character = LocalPlayer.Character
+                local root = character and character:FindFirstChild("HumanoidRootPart")
+
+                if root and (ownerRemote or valueRemote) then
+                    for part in pairs(BallCandidates) do
+                        if part.Parent and (part.Position - root.Position).Magnitude <= shield.studs then
+                            if ownerRemote then
+                                pcall(function()
+                                    ownerRemote:FireServer(part)
+                                end)
+                            end
+
+                            if valueRemote then
+                                pcall(function()
+                                    valueRemote:FireServer(part)
+                                end)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
+    function Game.setShield(value)
+        shield.enabled = value
+    end
+
+    function Game.setShieldStuds(value)
+        shield.studs = value
+    end
+end
+
+-- Copiar avatar
+do
+    local avatarState = { enabled = false, saved = nil }
+
+    local function captureAvatar()
+        local character = LocalPlayer.Character
+        if not character then return end
+
+        local saved = {
+            accessories = {},
+            clothing = {},
+            characterMeshes = {},
+            bodyColors = nil,
+            face = nil,
+            headMesh = nil,
+            partColors = {},
+        }
+
+        for _, child in ipairs(character:GetChildren()) do
+            if child:IsA("Accessory") then
+                table.insert(saved.accessories, child:Clone())
+            elseif child:IsA("Clothing") or child:IsA("ShirtGraphic") then
+                table.insert(saved.clothing, child:Clone())
+            elseif child:IsA("BodyColors") then
+                saved.bodyColors = child:Clone()
+            elseif child:IsA("CharacterMesh") then
+                table.insert(saved.characterMeshes, child:Clone())
+            elseif child:IsA("BasePart") and child.Name ~= "HumanoidRootPart" then
+                saved.partColors[child.Name] = child.Color
+            end
+        end
+
+        local head = character:FindFirstChild("Head")
+
+        if head then
+            local face = head:FindFirstChildOfClass("Decal")
+            if face then
+                saved.face = face:Clone()
+            end
+
+            local mesh = head:FindFirstChildOfClass("SpecialMesh")
+            if mesh then
+                saved.headMesh = mesh:Clone()
+            end
+        end
+
+        avatarState.saved = saved
+    end
+
+    local function clearAvatar()
+        local character = LocalPlayer.Character
+        if not character then return end
+
+        for _, child in ipairs(character:GetChildren()) do
+            if child:IsA("Accessory") or child:IsA("Clothing") or child:IsA("ShirtGraphic")
+                or child:IsA("BodyColors") or child:IsA("CharacterMesh") then
+                child:Destroy()
+            end
+        end
+
+        local head = character:FindFirstChild("Head")
+
+        if head then
+            local face = head:FindFirstChildOfClass("Decal")
+            if face then
+                face:Destroy()
+            end
+
+            local mesh = head:FindFirstChildOfClass("SpecialMesh")
+            if mesh then
+                mesh:Destroy()
+            end
+        end
+    end
+
+    local function attachAccessory(character, accessory)
+        local handle = accessory:FindFirstChild("Handle")
+
+        if handle then
+            local handleAttachment = handle:FindFirstChildOfClass("Attachment")
+
+            if handleAttachment then
+                local target = character:FindFirstChild(handleAttachment.Name, true)
+
+                if target then
+                    handle.CFrame = target.WorldCFrame
+
+                    local weld = Instance.new("Weld")
+                    weld.Name = "AccessoryWeld"
+                    weld.Part0 = handle
+                    weld.Part1 = target.Parent
+                    weld.C0 = handleAttachment.CFrame
+                    weld.C1 = target.CFrame
+                    weld.Parent = handle
+                end
+            end
+        end
+
+        accessory.Parent = character
+    end
+
+    local function restoreAvatar()
+        local character = LocalPlayer.Character
+        local saved = avatarState.saved
+
+        if not character or not saved then return end
+
+        clearAvatar()
+
+        for _, accessory in ipairs(saved.accessories) do
+            attachAccessory(character, accessory:Clone())
+        end
+
+        for _, item in ipairs(saved.clothing) do
+            item:Clone().Parent = character
+        end
+
+        if saved.bodyColors then
+            saved.bodyColors:Clone().Parent = character
+        end
+
+        for _, mesh in ipairs(saved.characterMeshes) do
+            mesh:Clone().Parent = character
+        end
+
+        local head = character:FindFirstChild("Head")
+
+        if head then
+            if saved.face then
+                saved.face:Clone().Parent = head
+            end
+
+            if saved.headMesh then
+                saved.headMesh:Clone().Parent = head
+            end
+        end
+
+        for partName, color in pairs(saved.partColors) do
+            local part = character:FindFirstChild(partName)
+
+            if part and part:IsA("BasePart") then
+                part.Color = color
+            end
+        end
+    end
+
+    local function applyFromUser(input)
+        local character = LocalPlayer.Character
+        if not character then
+            return false, "Sem personagem."
+        end
+
+        local userId = tonumber(input)
+
+        if not userId then
+            local okId, foundId = pcall(function()
+                return Players:GetUserIdFromNameAsync(input)
+            end)
+
+            if not okId then
+                return false, "Nome inválido."
+            end
+
+            userId = foundId
+        end
+
+        local okDescription, description = pcall(function()
+            return Players:GetHumanoidDescriptionFromUserId(userId)
+        end)
+
+        if not okDescription then
+            return false, "Não foi possível ler o avatar."
+        end
+
+        local okModel, model = pcall(function()
+            return Players:CreateHumanoidModelFromDescription(description, Enum.HumanoidRigType.R6)
+        end)
+
+        if not okModel then
+            return false, "Não foi possível criar o modelo."
+        end
+
+        clearAvatar()
+
+        for _, part in ipairs(model:GetChildren()) do
+            local mine = character:FindFirstChild(part.Name)
+
+            if mine and part:IsA("BasePart") and mine:IsA("BasePart") and mine.Name ~= "HumanoidRootPart" then
+                mine.Color = part.Color
+            end
+        end
+
+        local sourceHead = model:FindFirstChild("Head")
+        local myHead = character:FindFirstChild("Head")
+
+        if sourceHead and myHead then
+            local face = sourceHead:FindFirstChildOfClass("Decal")
+
+            if face then
+                face:Clone().Parent = myHead
+            else
+                local defaultFace = Instance.new("Decal")
+                defaultFace.Name = "face"
+                defaultFace.Texture = "rbxasset://textures/face.png"
+                defaultFace.Parent = myHead
+            end
+
+            local mesh = sourceHead:FindFirstChildOfClass("SpecialMesh")
+
+            if mesh then
+                mesh:Clone().Parent = myHead
+            end
+        end
+
+        for _, child in ipairs(model:GetChildren()) do
+            if child:IsA("Clothing") or child:IsA("ShirtGraphic")
+                or child:IsA("BodyColors") or child:IsA("CharacterMesh") then
+                child:Clone().Parent = character
+            elseif child:IsA("Accessory") then
+                attachAccessory(character, child:Clone())
+            end
+        end
+
+        model:Destroy()
+
+        return true, "Avatar copiado."
+    end
+
+    function Game.setAvatarCopy(enabled, name)
+        if enabled then
+            if not name or name == "" then
+                return false, "Digite um nome ou ID primeiro."
+            end
+
+            captureAvatar()
+
+            local ok, message = applyFromUser(name)
+
+            if ok then
+                avatarState.enabled = true
+            end
+
+            return ok, message
+        end
+
+        if avatarState.enabled then
+            restoreAvatar()
+            avatarState.enabled = false
+        end
+
+        return true, "Avatar restaurado."
+    end
+end
+
+-- Cor do campo
+do
+    local field = {
+        color = Color3.fromRGB(0, 0, 0),
+        enabled = false,
+        originals = {},
+    }
+
+    local surfaceWords = { "grass", "ground", "floor", "terrain", "rock", "baseplate", "tile", "wall", "brick" }
+
+    local function isFieldSurface(part)
+        local lowered = part.Name:lower()
+        local model = part:FindFirstAncestorOfClass("Model")
+
+        if model then
+            local modelName = model.Name:lower()
+
+            if modelName:find("character", 1, true) or modelName:find("player", 1, true) then
+                return false
+            end
+        end
+
+        local parent = part.Parent
+
+        if parent and (parent:IsA("Accessory") or parent:IsA("Tool")) then
+            return false
+        end
+
+        for _, word in ipairs(surfaceWords) do
+            if lowered:find(word, 1, true) then
+                return true
+            end
+        end
+
+        return false
+    end
+
+    local function paintField()
+        for part in pairs(field.originals) do
+            if part.Parent then
+                pcall(function()
+                    part.Color = field.color
+                end)
+            end
+        end
+    end
+
+    local function restoreField()
+        for part, color in pairs(field.originals) do
+            if part.Parent then
+                pcall(function()
+                    part.Color = color
+                end)
+            end
+        end
+
+        field.originals = {}
+    end
+
+    function Game.setFieldColor(color)
+        field.color = color
+
+        if field.enabled then
+            paintField()
+        end
+    end
+
+    function Game.setFieldColorEnabled(enabled)
+        if enabled then
+            restoreField()
+
+            for _, obj in ipairs(Workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and isFieldSurface(obj) then
+                    field.originals[obj] = obj.Color
+                end
+            end
+
+            field.enabled = true
+            paintField()
+        else
+            field.enabled = false
+            restoreField()
+        end
+    end
+end
+
+-- Controles de celular
+do
+    local gui = nil
+    local connections = {}
+    local heldKeys = {}
+    local joystick = Vector2.zero
+    local jumpHeld = false
+
+    local ballGui = nil
+    local ballConnections = {}
+    local control = {
+        active = false,
+        ball = nil,
+        yaw = 0,
+        pitch = 0,
+        inputConn = nil,
+        renderConn = nil,
+        savedType = nil,
+        savedSubject = nil,
+        button = nil,
+    }
+
+    local function isPress(input)
+        return input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch
+    end
+
+    local function isMove(input)
+        return input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+    end
+
+    local function makeDraggable(button, list)
+        local state = { moved = false }
+        local dragging = false
+        local dragInput = nil
+        local dragStart = nil
+        local startPos = nil
+
+        table.insert(list, button.InputBegan:Connect(function(input)
+            if isPress(input) then
+                dragging = true
+                state.moved = false
+                dragStart = input.Position
+                startPos = button.Position
+
+                local changed
+                changed = input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                        changed:Disconnect()
+                    end
+                end)
+            end
+        end))
+
+        table.insert(list, button.InputChanged:Connect(function(input)
+            if isMove(input) then
+                dragInput = input
+            end
+        end))
+
+        table.insert(list, UserInputService.InputChanged:Connect(function(input)
+            if dragging and input == dragInput then
+                local delta = input.Position - dragStart
+
+                if delta.Magnitude > 8 then
+                    state.moved = true
+                end
+
+                button.Position = UDim2.new(
+                    startPos.X.Scale, startPos.X.Offset + delta.X,
+                    startPos.Y.Scale, startPos.Y.Offset + delta.Y
+                )
+            end
+        end))
+
+        return state
+    end
+
+    local function roundButton(parent, text, size, position)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0, size, 0, size)
+        button.Position = position
+        button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        button.BackgroundTransparency = 0.3
+        button.Text = text
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)  -- TEXTO BRANCO
+        button.TextScaled = true
+        button.Font = Enum.Font.GothamBold
+        button.AutoButtonColor = false
+        button.Parent = parent
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = button
+
+        return button
+    end
+
+    local function destroyMobileControls()
+        for _, connection in ipairs(connections) do
+            pcall(function()
+                connection:Disconnect()
+            end)
+        end
+
+        table.clear(connections)
+
+        for key in pairs(heldKeys) do
+            pcall(function()
+                VirtualInputManager:SendKeyEvent(false, key, false, game)
+            end)
+        end
+
+        table.clear(heldKeys)
+
+        if gui then
+            gui:Destroy()
+            gui = nil
+        end
+
+        joystick = Vector2.zero
+        jumpHeld = false
+    end
+
+    local function createMobileControls()
+        if gui then
+            destroyMobileControls()
+        end
+
+        gui = Instance.new("ScreenGui")
+        gui.Name = "BinariumMobileControls"
+        gui.ResetOnSpawn = false
+        gui.IgnoreGuiInset = true
+        gui.DisplayOrder = 999
+        gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+        local keyDefs = {
+            { name = "R", key = Enum.KeyCode.R },
+            { name = "T", key = Enum.KeyCode.T },
+        }
+
+        for index, def in ipairs(keyDefs) do
+            local button = roundButton(gui, def.name, 60, UDim2.new(1, -90, 1, -220 - (index - 1) * 75))
+            local drag = makeDraggable(button, connections)
+
+            table.insert(connections, button.MouseButton1Click:Connect(function()
+                if drag.moved then return end
+
+                local nowHeld = not heldKeys[def.key]
+                heldKeys[def.key] = nowHeld or nil
+
+                button.BackgroundColor3 = nowHeld and Color3.fromRGB(8, 8, 8) or Color3.fromRGB(0, 0, 0)
+
+                pcall(function()
+                    VirtualInputManager:SendKeyEvent(nowHeld, def.key, false, game)
+                end)
+            end))
+        end
+
+        local jumpButton = roundButton(gui, "^", 70, UDim2.new(1, -100, 1, -95))
+
+        table.insert(connections, jumpButton.InputBegan:Connect(function(input)
+            if isPress(input) then
+                jumpHeld = true
+                jumpButton.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+            end
+        end))
+
+        table.insert(connections, jumpButton.InputEnded:Connect(function(input)
+            if isPress(input) then
+                jumpHeld = false
+                jumpButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            end
+        end))
+
+        local radius = 45
+
+        local base = Instance.new("Frame")
+        base.Size = UDim2.new(0, 220, 0, 220)
+        base.Position = UDim2.new(0, 20, 1, -240)
+        base.BackgroundTransparency = 1
+        base.Active = true
+        base.Parent = gui
+
+        local thumb = Instance.new("Frame")
+        thumb.Size = UDim2.new(0, 34, 0, 34)
+        thumb.AnchorPoint = Vector2.new(0.5, 0.5)
+        thumb.Position = UDim2.new(0.5, 0, 0.5, 0)
+        thumb.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        thumb.BackgroundTransparency = 0.35
+        thumb.Parent = base
+
+        local thumbCorner = Instance.new("UICorner")
+        thumbCorner.CornerRadius = UDim.new(1, 0)
+        thumbCorner.Parent = thumb
+
+        local joyActive = false
+        local joyInput = nil
+
+        table.insert(connections, base.InputBegan:Connect(function(input, processed)
+            if processed then return end
+
+            if isPress(input) then
+                joyActive = true
+                joyInput = input
+            end
+        end))
+
+        table.insert(connections, UserInputService.InputChanged:Connect(function(input)
+            if not joyActive then return end
+
+            local sameInput = input == joyInput
+                or (input.UserInputType == Enum.UserInputType.MouseMovement
+                    and joyInput and joyInput.UserInputType == Enum.UserInputType.MouseButton1)
+
+            if not sameInput then return end
+
+            local center = base.AbsolutePosition + base.AbsoluteSize / 2
+            local offset = Vector2.new(input.Position.X, input.Position.Y) - center
+
+            if offset.Magnitude > radius then
+                offset = offset.Unit * radius
+            end
+
+            thumb.Position = UDim2.new(0.5, offset.X, 0.5, offset.Y)
+            joystick = offset / radius
+        end))
+
+        table.insert(connections, UserInputService.InputEnded:Connect(function(input)
+            if joyActive and input == joyInput then
+                joyActive = false
+                joyInput = nil
+                thumb.Position = UDim2.new(0.5, 0, 0.5, 0)
+                joystick = Vector2.zero
+            end
+        end))
+
+        table.insert(connections, RunService.RenderStepped:Connect(function()
+            local character = LocalPlayer.Character
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+            if not humanoid then return end
+
+            if jumpHeld then
+                humanoid.Jump = true
+            end
+
+            if joystick.Magnitude > 0.05 then
+                local camera = Workspace.CurrentCamera
+                if not camera then return end
+
+                local look = camera.CFrame.LookVector
+                local right = camera.CFrame.RightVector
+
+                local forward = Vector3.new(look.X, 0, look.Z)
+                if forward.Magnitude > 0 then
+                    forward = forward.Unit
+                end
+
+                local side = Vector3.new(right.X, 0, right.Z)
+                if side.Magnitude > 0 then
+                    side = side.Unit
+                end
+
+                humanoid:Move(side * joystick.X + forward * -joystick.Y, false)
+            end
+        end))
+    end
+
+    function Game.setMobileControls(enabled)
+        if enabled then
+            createMobileControls()
+        else
+            destroyMobileControls()
+        end
+    end
+
+    local function stopControl()
+        control.active = false
+
+        if control.inputConn then
+            control.inputConn:Disconnect()
+            control.inputConn = nil
+        end
+
+        if control.renderConn then
+            control.renderConn:Disconnect()
+            control.renderConn = nil
+        end
+
+        local camera = Workspace.CurrentCamera
+
+        if camera and control.savedType then
+            camera.CameraType = control.savedType
+            camera.CameraSubject = control.savedSubject
+        end
+
+        control.ball = nil
+
+        if control.button then
+            control.button.Text = "Controlar bola"
+            control.button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        end
+    end
+
+    local function startControl()
+        local character = LocalPlayer.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        local ball = root and GetClosestBall(root)
+
+        if not ball or (ball.Position - root.Position).Magnitude > 80 then
+            Notify("Controlar bola", "Nenhuma bola por perto.", "info")
+            return
+        end
+
+        local camera = Workspace.CurrentCamera
+        if not camera then return end
+
+        control.ball = ball
+        control.active = true
+        control.savedType = camera.CameraType
+        control.savedSubject = camera.CameraSubject
+
+        local look = camera.CFrame.LookVector
+        control.yaw = math.atan2(-look.X, -look.Z)
+        control.pitch = math.asin(math.clamp(look.Y, -1, 1))
+
+        camera.CameraType = Enum.CameraType.Scriptable
+
+        if control.button then
+            control.button.Text = "Ativo"
+            control.button.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+        end
+
+        control.inputConn = UserInputService.InputChanged:Connect(function(input, processed)
+            if not control.active or processed then return end
+
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                control.yaw = control.yaw - input.Delta.X * 0.004
+                control.pitch = math.clamp(control.pitch - input.Delta.Y * 0.004, -1.2, 1.2)
+            elseif input.UserInputType == Enum.UserInputType.Touch then
+                control.yaw = control.yaw - input.Delta.X * 0.006
+                control.pitch = math.clamp(control.pitch - input.Delta.Y * 0.006, -1.2, 1.2)
+            end
+        end)
+
+        control.renderConn = RunService.RenderStepped:Connect(function()
+            local target = control.ball
+
+            if not control.active or not target or not target.Parent then
+                stopControl()
+                return
+            end
+
+            local direction = CFrame.fromEulerAnglesYXZ(control.pitch, control.yaw, 0).LookVector
+
+            pcall(function()
+                target.AssemblyLinearVelocity = direction * 70
+                target.AssemblyAngularVelocity = Vector3.zero
+            end)
+
+            local currentCamera = Workspace.CurrentCamera
+
+            if currentCamera then
+                local cameraPosition = target.Position - direction * 16 + Vector3.new(0, 6, 0)
+                currentCamera.CFrame = CFrame.lookAt(cameraPosition, target.Position + Vector3.new(0, 1.5, 0))
+            end
+        end)
+    end
+
+    local function destroyBallControl()
+        stopControl()
+
+        for _, connection in ipairs(ballConnections) do
+            pcall(function()
+                connection:Disconnect()
+            end)
+        end
+
+        table.clear(ballConnections)
+
+        if ballGui then
+            ballGui:Destroy()
+            ballGui = nil
+        end
+
+        control.button = nil
+    end
+
+    local function createBallControl()
+        if ballGui then
+            destroyBallControl()
+        end
+
+        ballGui = Instance.new("ScreenGui")
+        ballGui.Name = "BinariumBallControl"
+        ballGui.ResetOnSpawn = false
+        ballGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+        local button = Instance.new("TextButton")
+        button.Name = "ControlBall"
+        button.Size = UDim2.new(0, 150, 0, 55)
+        button.Position = UDim2.new(0.5, -75, 0.5, -27)
+        button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)  -- TEXTO BRANCO
+        button.Text = "Controlar bola"
+        button.Font = Enum.Font.GothamBold
+        button.TextSize = 18
+        button.AutoButtonColor = false
+        button.Parent = ballGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 12)
+        corner.Parent = button
+
+        control.button = button
+
+        local drag = makeDraggable(button, ballConnections)
+
+        table.insert(ballConnections, button.MouseButton1Click:Connect(function()
+            if drag.moved then return end
+
+            if control.active then
+                stopControl()
+            else
+                startControl()
+            end
+        end))
+    end
+
+    function Game.setBallControl(enabled)
+        if enabled then
+            createBallControl()
+        else
+            destroyBallControl()
+        end
+    end
+end
+
+end
+
+Loading.Set(0.7, "Preparando funções...")
+
+--------------------------------------------------
 -- JANELA PRINCIPAL
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = BLACK
-MainFrame.Position = UDim2.new(0.5, -260, 0.5, -190)
-MainFrame.Size = UDim2.new(0, 520, 0, 380)
-MainFrame.Visible = false
-MainFrame.ClipsDescendants = true
+--------------------------------------------------
 
-local MainCorner = Instance.new("UICorner", MainFrame)
-MainCorner.CornerRadius = UDim.new(0, 12)
+local Window = WindUI:CreateWindow({
+    Title = "BINARIUM",
+    Author = "by riive3lino",
+    Icon = "layout-dashboard",
 
-local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = BORDER
-MainStroke.Thickness = 1.3
+    Folder = "BinariumHub",
 
-MakeDraggable(MainFrame)
+    Size = UDim2.fromOffset(610, 465),
+    MinSize = Vector2.new(520, 390),
+    MaxSize = Vector2.new(800, 600),
 
--- HEADER
-local Header = Instance.new("Frame")
-Header.Parent = MainFrame
-Header.BackgroundColor3 = PANEL
-Header.Size = UDim2.new(1, 0, 0, 65)
+    Theme = Config.Theme,
 
-local HeaderCorner = Instance.new("UICorner", Header)
-HeaderCorner.CornerRadius = UDim.new(0, 12)
+    Transparent = true,
+    Resizable = true,
+    SideBarWidth = 155,
+    ScrollBarEnabled = true,
+    HideSearchBar = false,
+    NewElements = true,
 
-local HeaderTitle = Instance.new("TextLabel")
-HeaderTitle.Parent = Header
-HeaderTitle.BackgroundTransparency = 1
-HeaderTitle.Position = UDim2.new(0, 18, 0, 9)
-HeaderTitle.Size = UDim2.new(0, 250, 0, 25)
-HeaderTitle.Font = Enum.Font.GothamBold
-HeaderTitle.Text = "BINARIUM"
-HeaderTitle.TextColor3 = WHITE
-HeaderTitle.TextSize = 19
-HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+    ToggleKey = Enum.KeyCode.RightShift
+})
 
-local HeaderSubtitle = Instance.new("TextLabel")
-HeaderSubtitle.Parent = Header
-HeaderSubtitle.BackgroundTransparency = 1
-HeaderSubtitle.Position = UDim2.new(0, 19, 0, 34)
-HeaderSubtitle.Size = UDim2.new(0, 250, 0, 16)
-HeaderSubtitle.Font = Enum.Font.Gotham
-HeaderSubtitle.Text = "TCs Edition  •  by @7zhc"
-HeaderSubtitle.TextColor3 = MUTED
-HeaderSubtitle.TextSize = 10
-HeaderSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+pcall(function()
+    Window:Tag({
+        Title = "v" .. Config.Version,
+        Icon = "github",
+        Color = Color3.fromHex("#000000"),
+        Radius = 0,
+    })
+end)
 
-local Status = Instance.new("TextLabel")
-Status.Parent = Header
-Status.BackgroundTransparency = 1
-Status.Position = UDim2.new(1, -105, 0, 20)
-Status.Size = UDim2.new(0, 85, 0, 22)
-Status.Font = Enum.Font.GothamBold
-Status.Text = "● ONLINE"
-Status.TextColor3 = WHITE
-Status.TextSize = 10
+Loading.Set(0.85, "Montando o hub...")
 
--- SIDEBAR
-local Sidebar = Instance.new("Frame")
-Sidebar.Parent = MainFrame
-Sidebar.BackgroundColor3 = PANEL
-Sidebar.Position = UDim2.new(0, 0, 0, 65)
-Sidebar.Size = UDim2.new(0, 125, 1, -65)
+--------------------------------------------------
+-- PASTAS EXPANSÍVEIS
+--------------------------------------------------
 
-local SidebarLine = Instance.new("Frame")
-SidebarLine.Parent = Sidebar
-SidebarLine.BackgroundColor3 = BORDER
-SidebarLine.BorderSizePixel = 0
-SidebarLine.Position = UDim2.new(1, -1, 0, 0)
-SidebarLine.Size = UDim2.new(0, 1, 1, 0)
+local MainFolder = Window:Section({
+    Title = "PRINCIPAL",
+    Icon = "layout-dashboard",
+    Opened = true
+})
 
--- CONTEÚDO
-local Container = Instance.new("Frame")
-Container.Parent = MainFrame
-Container.BackgroundTransparency = 1
-Container.Position = UDim2.new(0, 140, 0, 80)
-Container.Size = UDim2.new(1, -155, 1, -95)
+local GameFolder = Window:Section({
+    Title = "JOGO",
+    Icon = "gamepad-2",
+    Opened = true
+})
 
--- PÁGINAS
-local Pages = {}
+local InterfaceFolder = Window:Section({
+    Title = "VISUAL",
+    Icon = "palette",
+    Opened = false
+})
 
-local function CreatePage(name)
-    local page = Instance.new("ScrollingFrame")
-    page.Name = name
-    page.Parent = Container
-    page.Size = UDim2.new(1, 0, 1, 0)
-    page.BackgroundTransparency = 1
-    page.BorderSizePixel = 0
-    page.Visible = false
-    page.ScrollBarThickness = 2
-    page.ScrollBarImageColor3 = WHITE
-    page.CanvasSize = UDim2.new(0, 0, 0, 230)
-    Pages[name] = page
-    return page
-end
+local SystemFolder = Window:Section({
+    Title = "SISTEMA",
+    Icon = "settings",
+    Opened = false
+})
 
-local PageFollow = CreatePage("Auto Follow")
-local PageReach = CreatePage("Reach")
-local PageBall = CreatePage("Bola")
-local PageGrass = CreatePage("Gramado")
-local PageAntiLag = CreatePage("Anti-Lag")
+local InfoFolder = Window:Section({
+    Title = "INFO",
+    Icon = "info",
+    Opened = false
+})
 
--- ABAS
-local Tabs = {}
+--------------------------------------------------
+-- PÁGINAS DENTRO DAS PASTAS
+--------------------------------------------------
 
-local function CreateTab(name, icon, order)
-    local btn = Instance.new("TextButton")
-    btn.Parent = Sidebar
-    btn.BackgroundColor3 = PANEL
-    btn.Position = UDim2.new(0, 9, 0, 15 + ((order - 1) * 42))
-    btn.Size = UDim2.new(1, -18, 0, 34)
-    btn.Font = Enum.Font.GothamMedium
-    btn.Text = icon .. "   " .. name
-    btn.TextColor3 = MUTED
-    btn.TextSize = 10
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.AutoButtonColor = false
+local Home = MainFolder:Tab({
+    Title = "Início",
+    Icon = "house"
+})
 
-    local padding = Instance.new("UIPadding", btn)
-    padding.PaddingLeft = UDim.new(0, 9)
+local ReachTab = GameFolder:Tab({
+    Title = "Reach",
+    Icon = "target"
+})
 
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 7)
+local PlayerTab = GameFolder:Tab({
+    Title = "Player",
+    Icon = "user-round"
+})
 
-    local stroke = Instance.new("UIStroke", btn)
-    stroke.Color = BORDER
-    stroke.Thickness = 1
-    stroke.Enabled = false
+local GoalkeeperTab = GameFolder:Tab({
+    Title = "Goalkeeper",
+    Icon = "hand"
+})
 
-    Tabs[name] = {
-        Button = btn,
-        Stroke = stroke
+local VisualTab = GameFolder:Tab({
+    Title = "Visual",
+    Icon = "eye"
+})
+
+local MiscTab = GameFolder:Tab({
+    Title = "Misc",
+    Icon = "sparkles"
+})
+
+local HotkeysTab = GameFolder:Tab({
+    Title = "Atalhos",
+    Icon = "keyboard"
+})
+
+local Personalization = InterfaceFolder:Tab({
+    Title = "Personalização",
+    Icon = "sliders-horizontal"
+})
+
+local Appearance = InterfaceFolder:Tab({
+    Title = "Aparência",
+    Icon = "palette"
+})
+
+local Changelog = SystemFolder:Tab({
+    Title = "Changelog",
+    Icon = "history"
+})
+
+local Settings = SystemFolder:Tab({
+    Title = "Configurações",
+    Icon = "settings"
+})
+
+local About = InfoFolder:Tab({
+    Title = "Sobre",
+    Icon = "info"
+})
+
+local Credits = InfoFolder:Tab({
+    Title = "Créditos",
+    Icon = "heart"
+})
+
+--------------------------------------------------
+-- REGISTRO DE OPÇÕES
+--------------------------------------------------
+
+local Registry = {}
+local Features = {}
+local Hotkeys = {}
+
+local function AddToggle(tab, flag, opts)
+    local state = opts.Default and true or false
+    local silent = false
+    local element
+
+    Features[flag] = opts.Notify or { opts.Title, "Ativado.", "Desativado.", "info" }
+
+    element = tab:Toggle({
+        Title = opts.Title,
+        Desc = opts.Desc,
+        Value = state,
+
+        Callback = function(value)
+            if silent then return end
+
+            state = value and true or false
+            opts.OnChange(state)
+
+            if opts.Notify then
+                Notify(opts.Notify[1], state and opts.Notify[2] or opts.Notify[3], opts.Notify[4])
+            end
+        end
+    })
+
+    Registry[flag] = {
+        Get = function()
+            return state
+        end,
+
+        Set = function(value)
+            state = value and true or false
+            opts.OnChange(state)
+
+            silent = true
+            pcall(function()
+                element:Set(state)
+            end)
+            silent = false
+        end
     }
 
-    return btn
+    return element
 end
 
-local TabFollow = CreateTab("Follow", "01", 1)
-local TabReach = CreateTab("Reach", "02", 2)
-local TabBall = CreateTab("Bola", "03", 3)
-local TabGrass = CreateTab("Gramado", "04", 4)
-local TabAntiLag = CreateTab("Anti-Lag", "05", 5)
+local function AddSlider(tab, flag, opts)
+    local current = opts.Default
+    local silent = false
+    local element
 
-local function ShowPage(pageName)
-    for name, page in pairs(Pages) do
-        page.Visible = name == pageName
-    end
+    element = tab:Slider({
+        Title = opts.Title,
+        Desc = opts.Desc,
+        Step = opts.Step or 1,
+        Value = {
+            Min = opts.Min,
+            Max = opts.Max,
+            Default = opts.Default
+        },
 
-    local tabNames = {
-        ["Auto Follow"] = "Follow",
-        ["Reach"] = "Reach",
-        ["Bola"] = "Bola",
-        ["Gramado"] = "Gramado",
-        ["Anti-Lag"] = "Anti-Lag"
+        Callback = function(value)
+            if silent then return end
+
+            current = value
+            opts.OnChange(value)
+        end
+    })
+
+    Registry[flag] = {
+        Get = function()
+            return current
+        end,
+
+        Set = function(value)
+            value = tonumber(value)
+            if not value then return end
+
+            value = math.clamp(value, opts.Min, opts.Max)
+            current = value
+            opts.OnChange(value)
+
+            silent = true
+            pcall(function()
+                element:Set(value)
+            end)
+            silent = false
+        end
     }
 
-    for name, data in pairs(Tabs) do
-        local selected = name == tabNames[pageName]
+    return element
+end
 
-        data.Button.BackgroundColor3 = selected and CARD or PANEL
-        data.Button.TextColor3 = selected and WHITE or MUTED
-        data.Stroke.Enabled = selected
-        data.Stroke.Color = WHITE
+local function AddDropdown(tab, flag, opts)
+    local current = opts.Default
+    local silent = false
+    local element
+
+    element = tab:Dropdown({
+        Title = opts.Title,
+        Desc = opts.Desc,
+        Values = opts.Values,
+        Value = current,
+
+        Callback = function(value)
+            if silent then return end
+
+            current = value
+            opts.OnChange(value)
+        end
+    })
+
+    Registry[flag] = {
+        Get = function()
+            return current
+        end,
+
+        Set = function(value)
+            if not table.find(opts.Values, value) then return end
+
+            current = value
+            opts.OnChange(value)
+
+            silent = true
+            pcall(function()
+                element:Select(value)
+            end)
+            silent = false
+        end
+    }
+
+    return element
+end
+
+--------------------------------------------------
+-- ATALHOS DE TECLADO
+--------------------------------------------------
+
+local BlockedKeys = {
+    W = true, A = true, S = true, D = true, Space = true,
+    Q = true, E = true, T = true, F = true, Z = true, C = true, H = true,
+    RightShift = true, Unknown = true
+}
+
+local HotkeyUI = {}
+local HotkeyTitles = {}
+local Listening = nil
+
+local function SetHotkey(flag, keyName)
+    Hotkeys[flag] = keyName
+
+    local ui = HotkeyUI[flag]
+
+    if ui then
+        local text = (keyName == "Nenhuma")
+            and "Nenhuma tecla. Clique para escolher."
+            or ("Tecla: " .. keyName .. ". Clique para trocar.")
+
+        pcall(function()
+            ui:SetDesc(text)
+        end)
     end
 end
 
-TabFollow.MouseButton1Click:Connect(function()
-    ShowPage("Auto Follow")
+UserInputService.InputBegan:Connect(function(input, processed)
+    if Listening then
+        if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+
+        local flag = Listening
+        local name = input.KeyCode.Name
+        Listening = nil
+
+        if name == "Escape" then
+            SetHotkey(flag, Hotkeys[flag])
+            Notify("ATALHOS", "Cancelado.", "info")
+            return
+        end
+
+        if name == "Backspace" then
+            SetHotkey(flag, "Nenhuma")
+            Notify("ATALHOS", HotkeyTitles[flag] .. ": atalho removido.", "check")
+            return
+        end
+
+        if BlockedKeys[name] then
+            SetHotkey(flag, Hotkeys[flag])
+            Notify("ATALHOS", "A tecla " .. name .. " não pode ser usada.", "info")
+            return
+        end
+
+        for otherFlag, bound in pairs(Hotkeys) do
+            if otherFlag ~= flag and bound == name then
+                SetHotkey(otherFlag, "Nenhuma")
+            end
+        end
+
+        SetHotkey(flag, name)
+        Notify("ATALHOS", HotkeyTitles[flag] .. ": " .. name, "check")
+        return
+    end
+
+    if processed then return end
+    if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+
+    local keyName = input.KeyCode.Name
+
+    for flag, bound in pairs(Hotkeys) do
+        if bound ~= "Nenhuma" and bound == keyName then
+            local entry = Registry[flag]
+            local text = Features[flag]
+
+            if entry then
+                local newValue = not entry.Get()
+                entry.Set(newValue)
+
+                if text then
+                    Notify(text[1], newValue and text[2] or text[3], text[4])
+                end
+            end
+        end
+    end
 end)
 
-TabReach.MouseButton1Click:Connect(function()
-    ShowPage("Reach")
-end)
+--------------------------------------------------
+-- SALVAR / CARREGAR CONFIGURAÇÕES
+--------------------------------------------------
 
-TabBall.MouseButton1Click:Connect(function()
-    ShowPage("Bola")
-end)
+local ConfigFolder = "BinariumHub"
+local ConfigDir = ConfigFolder .. "/configs"
+local AutoloadFile = ConfigFolder .. "/autoload.txt"
 
-TabGrass.MouseButton1Click:Connect(function()
-    ShowPage("Gramado")
-end)
-
-TabAntiLag.MouseButton1Click:Connect(function()
-    ShowPage("Anti-Lag")
-end)
-
--- TÍTULOS DAS PÁGINAS
-local function AddSection(page, title, subtitle)
-    local label = Instance.new("TextLabel")
-    label.Parent = page
-    label.BackgroundTransparency = 1
-    label.Position = UDim2.new(0, 2, 0, 0)
-    label.Size = UDim2.new(1, -5, 0, 42)
-    label.Font = Enum.Font.GothamBold
-    label.Text = title .. "\n" .. subtitle
-    label.TextColor3 = WHITE
-    label.TextSize = 13
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextYAlignment = Enum.TextYAlignment.Top
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = BORDER
-    stroke.Thickness = 1
+local function CanSave()
+    return writefile and readfile and isfile and makefolder and isfolder
 end
 
-AddSection(PageFollow, "Auto Follow", "Controle automático de movimento")
-AddSection(PageReach, "Reach Settings", "Configure o alcance")
-AddSection(PageBall, "Ball Customization", "Personalize a bola")
-AddSection(PageGrass, "Field Appearance", "Personalize o gramado")
-AddSection(PageAntiLag, "Performance", "Otimizações visuais")
+local function EnsureFolders()
+    if not isfolder(ConfigFolder) then
+        makefolder(ConfigFolder)
+    end
 
--- BOTÕES DAS OPÇÕES
-local function AddOptionButton(page, text, callback, yOffset)
-    local btn = Instance.new("TextButton")
-    btn.Parent = page
-    btn.BackgroundColor3 = CARD
-    btn.Position = UDim2.new(0, 0, 0, yOffset)
-    btn.Size = UDim2.new(1, -5, 0, 34)
-    btn.Font = Enum.Font.GothamMedium
-    btn.Text = "   " .. text
-    btn.TextColor3 = WHITE
-    btn.TextSize = 10
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.AutoButtonColor = false
-
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 7)
-
-    local stroke = Instance.new("UIStroke", btn)
-    stroke.Color = BORDER
-    stroke.Thickness = 1
-
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {
-            BackgroundColor3 = Color3.fromRGB(38, 38, 38)
-        }):Play()
-    end)
-
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {
-            BackgroundColor3 = CARD
-        }):Play()
-    end)
-
-    btn.MouseButton1Click:Connect(function()
-        callback(btn, stroke)
-    end)
-
-    return btn
+    if not isfolder(ConfigDir) then
+        makefolder(ConfigDir)
+    end
 end
 
--- FOLLOW
-AddOptionButton(PageFollow, "Botão Flutuante: VISÍVEL", function(btn)
-    FloatButton.Visible = not FloatButton.Visible
-    btn.Text = FloatButton.Visible
-        and "   Botão Flutuante: VISÍVEL"
-        or "   Botão Flutuante: OCULTO"
-end, 52)
+local function CleanName(name)
+    local cleaned = tostring(name or ""):gsub("[^%w_%-]", "")
 
-local InfoLabel = Instance.new("TextLabel")
-InfoLabel.Parent = PageFollow
-InfoLabel.BackgroundColor3 = CARD
-InfoLabel.Position = UDim2.new(0, 0, 0, 94)
-InfoLabel.Size = UDim2.new(1, -5, 0, 48)
-InfoLabel.Font = Enum.Font.Gotham
-InfoLabel.Text = "O movimento manual interrompe o acompanhamento."
-InfoLabel.TextColor3 = MUTED
-InfoLabel.TextSize = 10
-InfoLabel.TextWrapped = true
+    if cleaned == "" then
+        cleaned = "padrao"
+    end
 
-local InfoCorner = Instance.new("UICorner", InfoLabel)
-InfoCorner.CornerRadius = UDim.new(0, 7)
+    return cleaned
+end
 
-AddOptionButton(PageFollow, "Distância: Colado (1.5m)", function()
-    FollowDistance = 1.5
-end, 151)
+local function SaveConfig(name)
+    if not CanSave() then
+        return false, "Seu executor não suporta salvar arquivos."
+    end
 
-AddOptionButton(PageFollow, "Distância: Médio (1.8m)", function()
-    FollowDistance = 1.8
-end, 191)
+    name = CleanName(name)
 
-AddOptionButton(PageFollow, "Distância: Longo (2.2m)", function()
-    FollowDistance = 2.2
-end, 231)
+    local data = {}
 
+    for flag, entry in pairs(Registry) do
+        data[flag] = entry.Get()
+    end
+
+    local ok, err = pcall(function()
+        EnsureFolders()
+        writefile(ConfigDir .. "/" .. name .. ".json", HttpService:JSONEncode(data))
+    end)
+
+    if ok then
+        return true, "Config salva: " .. name
+    end
+
+    return false, "Erro ao salvar: " .. tostring(err)
+end
+
+local function LoadConfig(name)
+    if not CanSave() then
+        return false, "Seu executor não suporta ler arquivos."
+    end
+
+    name = CleanName(name)
+
+    local path = ConfigDir .. "/" .. name .. ".json"
+
+    if not isfile(path) then
+        return false, "Config não encontrada: " .. name
+    end
+
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(readfile(path))
+    end)
+
+    if not ok or type(data) ~= "table" then
+        return false, "Arquivo de config inválido."
+    end
+
+    ConfigLoading = true
+
+    for flag, value in pairs(data) do
+        local entry = Registry[flag]
+
+        if entry then
+            pcall(entry.Set, value)
+        end
+    end
+
+    ConfigLoading = false
+
+    return true, "Config carregada: " .. name
+end
+
+local function DeleteConfig(name)
+    if not (CanSave() and delfile) then
+        return false, "Seu executor não suporta apagar arquivos."
+    end
+
+    name = CleanName(name)
+
+    local path = ConfigDir .. "/" .. name .. ".json"
+
+    if not isfile(path) then
+        return false, "Config não encontrada: " .. name
+    end
+
+    pcall(delfile, path)
+
+    return true, "Config apagada: " .. name
+end
+
+local function ListConfigs()
+    local names = {}
+
+    if listfiles and isfolder and isfolder(ConfigDir) then
+        local ok, files = pcall(listfiles, ConfigDir)
+
+        if ok then
+            for _, file in ipairs(files) do
+                local name = tostring(file):match("([^/\\]+)%.json$")
+
+                if name then
+                    table.insert(names, name)
+                end
+            end
+        end
+    end
+
+    return names
+end
+
+local function AutoloadName()
+    if CanSave() and isfile(AutoloadFile) then
+        local ok, name = pcall(readfile, AutoloadFile)
+
+        if ok and name and name ~= "" then
+            return CleanName(name)
+        end
+    end
+
+    return nil
+end
+
+--------------------------------------------------
+-- INÍCIO
+--------------------------------------------------
+
+Home:Paragraph({
+    Title = "Bem-vindo à Binarium",
+    Desc = "Uma nova experiência, uma nova interface.\nExplore a Binarium " .. Config.Version .. " e personalize sua experiência.",
+    Icon = "sparkles",
+    IconThemed = true
+})
+
+Home:Paragraph({
+    Title = "Perfil do jogador",
+    Desc = displayName .. "\n@" .. playerName .. "\nID: " .. userId,
+    Icon = "user-round",
+    IconThemed = true
+})
+
+Home:Paragraph({
+    Title = "Conta Roblox",
+    Desc = "Tempo de conta: " .. accountAge,
+    Icon = "calendar-days",
+    IconThemed = true
+})
+
+Home:Paragraph({
+    Title = "Experiência atual",
+    Desc = gameName .. "\nPlace ID: " .. tostring(game.PlaceId),
+    Icon = "gamepad-2",
+    IconThemed = true
+})
+
+Home:Paragraph({
+    Title = "Informações da sessão",
+    Desc = "Job ID: " .. tostring(game.JobId),
+    Icon = "fingerprint",
+    IconThemed = true
+})
+
+Home:Paragraph({
+    Title = "Binarium " .. Config.Version,
+    Desc = "Interface carregada.\nBiblioteca: WindUI",
+    Icon = "shield-check",
+    IconThemed = true
+})
+
+Home:Button({
+    Title = "Copiar meu User ID",
+    Desc = "Copia o identificador da sua conta.",
+    Icon = "copy",
+
+    Callback = function()
+        if setclipboard then
+            local ok = pcall(function()
+                setclipboard(userId)
+            end)
+
+            if ok then
+                Notify("BINARIUM", "User ID copiado!", "check")
+            end
+        else
+            Notify("BINARIUM", "Executor sem suporte à cópia.", "info")
+        end
+    end
+})
+
+--------------------------------------------------
 -- REACH
-local ReachToggleBtn = AddOptionButton(
-    PageReach,
-    "   Reach: OFF",
-    function(btn, stroke)
-        ReachEnabled = not ReachEnabled
+--------------------------------------------------
 
-        btn.Text = ReachEnabled and "   Reach: ON" or "   Reach: OFF"
-        btn.TextColor3 = ReachEnabled and WHITE or MUTED
-        stroke.Color = ReachEnabled and WHITE or BORDER
-    end,
-    52
+ReachTab:Paragraph({
+    Title = "Configurações do Reach",
+    Desc = "Aumenta o alcance para tocar na bola.",
+    Icon = "target",
+    IconThemed = true
+})
+
+AddToggle(ReachTab, "reach", {
+    Title = "Ativar Reach",
+    Desc = "Aumenta o alcance para tocar na bola",
+    Default = false,
+    Notify = { "Binarium Hub", "Reach foi ativado!", "Reach foi desativado!", "target" },
+
+    OnChange = function(value)
+        Game.setReachActive(value)
+    end
+})
+
+AddToggle(ReachTab, "reachSphere", {
+    Title = "Reach Sphere (mostrar alcance)",
+    Desc = "Mostra o alcance em volta de você",
+    Default = false,
+
+    OnChange = function(value)
+        Game.setReachSphere(value)
+    end
+})
+
+AddSlider(ReachTab, "reachDist", {
+    Title = "Distância (Studs)",
+    Min = 1,
+    Max = 10,
+    Step = 0.5,
+    Default = 3.5,
+
+    OnChange = function(value)
+        Game.setReachDistance(value)
+    end
+})
+
+--------------------------------------------------
+-- PLAYER
+--------------------------------------------------
+
+PlayerTab:Paragraph({
+    Title = "Auto Follow Bola",
+    Desc = "Segue a bola automaticamente.",
+    Icon = "navigation",
+    IconThemed = true
+})
+
+AddToggle(PlayerTab, "follow", {
+    Title = "Ativar Auto Follow",
+    Desc = "Segue a bola automaticamente",
+    Default = false,
+    Notify = { "Auto Follow", "Auto Follow Habilitado!", "Auto Follow Desabilitado!", "navigation" },
+
+    OnChange = function(value)
+        Game.setFollowEnabled(value)
+    end
+})
+
+AddToggle(PlayerTab, "followButton", {
+    Title = "Mostrar Botão Flutuante",
+    Desc = "Botão para ligar o Follow na tela",
+    Default = true,
+
+    OnChange = function(value)
+        Game.setFollowButtonVisible(value)
+    end
+})
+
+AddSlider(PlayerTab, "followStop", {
+    Title = "Distância de parada",
+    Desc = "O follow para quando chegar perto da bola.",
+    Min = 0,
+    Max = 8,
+    Step = 0.1,
+    Default = 0.8,
+
+    OnChange = function(value)
+        Game.setFollowStopDistance(value)
+    end
+})
+
+PlayerTab:Paragraph({
+    Title = "Velocidade",
+    Desc = "Ajusta a velocidade de corrida (16 é o padrão).",
+    Icon = "zap",
+    IconThemed = true
+})
+
+AddSlider(PlayerTab, "speed", {
+    Title = "Velocidade",
+    Min = 16,
+    Max = 150,
+    Step = 1,
+    Default = 16,
+
+    OnChange = function(value)
+        Game.setSpeed(value)
+    end
+})
+
+PlayerTab:Paragraph({
+    Title = "Shield da bola",
+    Desc = "Protege a bola quando ela chega perto de você (usa os remotes do jogo).",
+    Icon = "shield",
+    IconThemed = true
+})
+
+AddToggle(PlayerTab, "shield", {
+    Title = "Ativar Shield",
+    Desc = "Protege a bola quando ela chega perto de você",
+    Default = false,
+    Notify = { "Shield", "Shield ativado!", "Shield desativado!", "shield" },
+
+    OnChange = function(value)
+        Game.setShield(value)
+    end
+})
+
+AddSlider(PlayerTab, "shieldStuds", {
+    Title = "Distância do Shield (Studs)",
+    Min = 1,
+    Max = 8,
+    Step = 1,
+    Default = 5,
+
+    OnChange = function(value)
+        Game.setShieldStuds(value)
+    end
+})
+
+PlayerTab:Paragraph({
+    Title = "Auto Hambolo",
+    Desc = "Aperta F sozinho quando a bola está perto e você está com a ferramenta Tackle.",
+    Icon = "swords",
+    IconThemed = true
+})
+
+AddToggle(PlayerTab, "hambolo", {
+    Title = "Ativar Auto Hambolo",
+    Desc = "Dá o carrinho sozinho perto da bola",
+    Default = false,
+    Notify = { "Auto Hambolo", "Auto Hambolo ativado!", "Auto Hambolo desativado!", "swords" },
+
+    OnChange = function(value)
+        Game.setHambolo(value)
+    end
+})
+
+AddSlider(PlayerTab, "hamboloDist", {
+    Title = "Distância do Hambolo (Studs)",
+    Min = 5,
+    Max = 30,
+    Step = 1,
+    Default = 20,
+
+    OnChange = function(value)
+        Game.setHamboloDistance(value)
+    end
+})
+
+PlayerTab:Paragraph({
+    Title = "Copiar avatar",
+    Desc = "Copia a aparência de outro jogador (só você vê). Digite o nome ou o ID e ligue.",
+    Icon = "user-round",
+    IconThemed = true
+})
+
+local avatarName = ""
+local avatarReverting = false
+local avatarToggle = nil
+
+PlayerTab:Input({
+    Title = "Nome ou ID",
+    Desc = "Username ou User ID do jogador",
+    Value = "",
+    Placeholder = "Username ou User ID",
+
+    Callback = function(value)
+        avatarName = tostring(value or "")
+    end
+})
+
+avatarToggle = PlayerTab:Toggle({
+    Title = "Copiar avatar",
+    Desc = "Liga para copiar, desliga para voltar ao seu avatar.",
+    Value = false,
+
+    Callback = function(value)
+        if avatarReverting then return end
+
+        local ok, message = Game.setAvatarCopy(value, avatarName)
+        Notify("Avatar", message, ok and "check" or "info")
+
+        if value and not ok then
+            avatarReverting = true
+
+            task.defer(function()
+                pcall(function()
+                    avatarToggle:Set(false)
+                end)
+
+                task.delay(0.3, function()
+                    avatarReverting = false
+                end)
+            end)
+        end
+    end
+})
+
+PlayerTab:Paragraph({
+    Title = "Controles de celular",
+    Desc = "Botões na tela para jogar no celular.",
+    Icon = "smartphone",
+    IconThemed = true
+})
+
+PlayerTab:Toggle({
+    Title = "Controles de celular",
+    Desc = "Botões R e T, botão de pulo e joystick na tela.",
+    Value = false,
+
+    Callback = function(value)
+        Game.setMobileControls(value)
+    end
+})
+
+PlayerTab:Toggle({
+    Title = "Controlar bola (celular)",
+    Desc = "Botão que deixa você guiar a bola com a câmera.",
+    Value = false,
+
+    Callback = function(value)
+        Game.setBallControl(value)
+    end
+})
+
+--------------------------------------------------
+-- GOALKEEPER
+--------------------------------------------------
+
+GoalkeeperTab:Paragraph({
+    Title = "Auto Catch (Goleiro)",
+    Desc = "Defende a bola sozinho. Precisa estar com a ferramenta GK.",
+    Icon = "hand",
+    IconThemed = true
+})
+
+AddToggle(GoalkeeperTab, "catch", {
+    Title = "Ativar Auto Catch",
+    Desc = "Defende a bola sozinho (goleiro)",
+    Default = false,
+    Notify = { "Goalkeeper", "Auto Catch Ativado!", "Auto Catch Desativado!", "hand" },
+
+    OnChange = function(value)
+        Game.setAutoCatch(value)
+    end
+})
+
+AddSlider(GoalkeeperTab, "catchRange", {
+    Title = "Alcance da Defesa (Studs)",
+    Min = 1,
+    Max = 50,
+    Step = 1,
+    Default = 10,
+
+    OnChange = function(value)
+        Game.setCatchRange(value)
+    end
+})
+
+AddToggle(GoalkeeperTab, "catchPush", {
+    Title = "Reduzir empurrão ao pegar a bola",
+    Desc = "Segura o personagem por um instante após a captura",
+    Default = true,
+
+    OnChange = function(value)
+        Game.setReducePush(value)
+    end
+})
+
+GoalkeeperTab:Paragraph({
+    Title = "Previsão da Bola",
+    Desc = "Marca no chão o ponto de queda da bola.",
+    Icon = "crosshair",
+    IconThemed = true
+})
+
+AddToggle(GoalkeeperTab, "predict", {
+    Title = "Mostrar onde a bola vai cair",
+    Desc = "Marca no chão o ponto de queda da bola",
+    Default = false,
+    Notify = { "Previsão", "Previsão ativada!", "Previsão desativada!", "crosshair" },
+
+    OnChange = function(value)
+        Game.setPredict(value)
+    end
+})
+
+GoalkeeperTab:Paragraph({
+    Title = "Auto Dive",
+    Desc = "Mergulha sozinho quando a bola vem na sua direção.",
+    Icon = "move",
+    IconThemed = true
+})
+
+AddToggle(GoalkeeperTab, "dive", {
+    Title = "Ativar Auto Dive",
+    Desc = "Mergulha sozinho quando a bola vem na sua direção",
+    Default = false,
+    Notify = { "Auto Dive", "Auto Dive Ativado!", "Auto Dive Desativado!", "move" },
+
+    OnChange = function(value)
+        Game.setDive(value)
+    end
+})
+
+AddDropdown(GoalkeeperTab, "diveMode", {
+    Title = "Modo do mergulho",
+    Desc = "Mergulho próprio: o script faz o mergulho e a defesa. Teclas do jogo: aperta Q/E/T/F/Z/C.",
+    Values = { "Mergulho próprio", "Teclas do jogo" },
+    Default = "Mergulho próprio",
+
+    OnChange = function(value)
+        Game.setDiveMode(value)
+    end
+})
+
+AddSlider(GoalkeeperTab, "diveRange", {
+    Title = "Alcance do Auto Dive (Studs)",
+    Min = 5,
+    Max = 30,
+    Step = 1,
+    Default = 15,
+
+    OnChange = function(value)
+        Game.setDiveRange(value)
+    end
+})
+
+AddSlider(GoalkeeperTab, "diveDelay", {
+    Title = "Delay entre mergulhos (s)",
+    Min = 0.1,
+    Max = 5,
+    Step = 0.1,
+    Default = 1,
+
+    OnChange = function(value)
+        Game.setDiveDelay(value)
+    end
+})
+
+AddToggle(GoalkeeperTab, "diveBallCheck", {
+    Title = "Ball Check",
+    Desc = "Desliga o Auto Dive quando a bola chega perto de você",
+    Default = false,
+
+    OnChange = function(value)
+        Game.setDiveCheck("ball", value)
+    end
+})
+
+AddToggle(GoalkeeperTab, "diveTeamCheck", {
+    Title = "Team Check",
+    Desc = "Só mergulha se o seu time for de goleiro",
+    Default = false,
+
+    OnChange = function(value)
+        Game.setDiveCheck("team", value)
+    end
+})
+
+AddToggle(GoalkeeperTab, "diveToolCheck", {
+    Title = "Tool Check",
+    Desc = "Só mergulha com a ferramenta GK na mão",
+    Default = true,
+
+    OnChange = function(value)
+        Game.setDiveCheck("tool", value)
+    end
+})
+
+Game.onDiveOff = function()
+    pcall(function()
+        Registry.dive.Set(false)
+    end)
+
+    Notify("Auto Dive", "Desligado: a bola chegou perto de você.", "move")
+end
+
+--------------------------------------------------
+-- VISUAL (SKYBOX + BOLA)
+--------------------------------------------------
+
+VisualTab:Paragraph({
+    Title = "Skybox",
+    Desc = "Muda o céu e a iluminação do mapa.",
+    Icon = "cloud-sun",
+    IconThemed = true
+})
+
+AddDropdown(VisualTab, "sky", {
+    Title = "Céu",
+    Desc = "Muda o céu e a iluminação do mapa",
+    Values = Game.skyList,
+    Default = "Padrão",
+
+    OnChange = function(value)
+        Game.applySky(value)
+    end
+})
+
+VisualTab:Paragraph({
+    Title = "Skybox personalizada",
+    Desc = "Cole 1 ID (vale para todas as faces) ou 6 IDs de imagem, na ordem: trás, baixo, frente, esquerda, direita, cima. Use Aplicar para testar e Salvar para guardar na lista.",
+    Icon = "image",
+    IconThemed = true
+})
+
+local skyNameValue = "minhasky"
+local skyIdsValue = ""
+local selectedCustomSky = nil
+local customSkyDropdown = nil
+
+local function customSkyList()
+    local names = Game.sortedSkyNames()
+
+    if #names == 0 then
+        return { "(nenhuma)" }
+    end
+
+    return names
+end
+
+VisualTab:Input({
+    Title = "Nome da skybox",
+    Desc = "Só letras e números",
+    Value = "minhasky",
+    Placeholder = "minhasky",
+
+    Callback = function(value)
+        skyNameValue = tostring(value or "")
+    end
+})
+
+VisualTab:Input({
+    Title = "IDs das imagens",
+    Desc = "1 ID ou 6 IDs",
+    Value = "",
+    Placeholder = "123456, 123457...",
+
+    Callback = function(value)
+        skyIdsValue = tostring(value or "")
+    end
+})
+
+VisualTab:Button({
+    Title = "Aplicar skybox",
+    Desc = "Mostra a skybox agora.",
+    Icon = "play",
+
+    Callback = function()
+        local faces = Game.parseSkyIds(skyIdsValue)
+
+        if not faces then
+            Notify("Skybox", "Informe 1 ID ou 6 IDs (números).", "info")
+            return
+        end
+
+        Game.applyCustomSky(faces)
+        Notify("Skybox", "Skybox aplicada!", "check")
+    end
+})
+
+VisualTab:Button({
+    Title = "Salvar skybox",
+    Desc = "Guarda na lista de baixo.",
+    Icon = "save",
+
+    Callback = function()
+        local faces = Game.parseSkyIds(skyIdsValue)
+
+        if not faces then
+            Notify("Skybox", "Informe 1 ID ou 6 IDs (números).", "info")
+            return
+        end
+
+        local name = tostring(skyNameValue):gsub("[^%w_%-]", "")
+
+        if name == "" then
+            name = "minhasky"
+        end
+
+        local saved = Game.saveCustomSky(name, faces)
+
+        pcall(function()
+            customSkyDropdown:Refresh(customSkyList())
+            customSkyDropdown:Select(name)
+        end)
+
+        selectedCustomSky = name
+
+        Notify(
+            "Skybox",
+            saved and ("Salva: " .. name) or "Aplicada, mas seu executor não salva arquivos.",
+            "check"
+        )
+    end
+})
+
+customSkyDropdown = VisualTab:Dropdown({
+    Title = "Minhas skyboxes",
+    Desc = "Escolha uma que você salvou",
+    Values = customSkyList(),
+
+    Callback = function(value)
+        selectedCustomSky = value
+
+        local faces = Game.getCustomSky(value)
+
+        if faces then
+            Game.applyCustomSky(faces)
+        end
+    end
+})
+
+VisualTab:Button({
+    Title = "Apagar skybox selecionada",
+    Desc = "Remove da lista.",
+    Icon = "trash-2",
+
+    Callback = function()
+        if not selectedCustomSky or not Game.deleteCustomSky(selectedCustomSky) then
+            Notify("Skybox", "Nenhuma skybox selecionada.", "info")
+            return
+        end
+
+        Notify("Skybox", "Apagada: " .. selectedCustomSky, "check")
+        selectedCustomSky = nil
+
+        pcall(function()
+            customSkyDropdown:Refresh(customSkyList())
+        end)
+    end
+})
+
+VisualTab:Paragraph({
+    Title = "Bola",
+    Desc = "Troca a aparência da bola (só para você).",
+    Icon = "circle-dot",
+    IconThemed = true
+})
+
+AddDropdown(VisualTab, "ballSkin", {
+    Title = "Skin da bola",
+    Desc = "Troca a aparência da bola (só para você)",
+    Values = Game.skinList,
+    Default = "Original",
+
+    OnChange = function(value)
+        Game.applyBallSkin(value)
+    end
+})
+
+VisualTab:Paragraph({
+    Title = "Skin da bola personalizada",
+    Desc = "Cole o ID da textura e, se quiser, o ID do mesh. Aplicar testa agora e Salvar guarda na lista.",
+    Icon = "image",
+    IconThemed = true
+})
+
+local ballNameValue = "minhaskin"
+local ballTextureValue = ""
+local ballMeshValue = ""
+local selectedCustomBall = nil
+local customBallDropdown = nil
+
+local function customBallList()
+    local names = Game.sortedBallSkinNames()
+
+    if #names == 0 then
+        return { "(nenhuma)" }
+    end
+
+    return names
+end
+
+VisualTab:Input({
+    Title = "Nome da skin",
+    Desc = "Só letras e números",
+    Value = "minhaskin",
+    Placeholder = "minhaskin",
+
+    Callback = function(value)
+        ballNameValue = tostring(value or "")
+    end
+})
+
+VisualTab:Input({
+    Title = "ID da textura",
+    Desc = "Obrigatório",
+    Value = "",
+    Placeholder = "123456789",
+
+    Callback = function(value)
+        ballTextureValue = tostring(value or "")
+    end
+})
+
+VisualTab:Input({
+    Title = "ID do mesh (opcional)",
+    Desc = "Deixe vazio para manter o formato da bola",
+    Value = "",
+    Placeholder = "123456789",
+
+    Callback = function(value)
+        ballMeshValue = tostring(value or "")
+    end
+})
+
+VisualTab:Button({
+    Title = "Aplicar skin",
+    Desc = "Mostra a skin na bola agora.",
+    Icon = "play",
+
+    Callback = function()
+        local texture = Game.parseBallId(ballTextureValue)
+
+        if not texture then
+            Notify("Skin da bola", "Informe o ID da textura (números).", "info")
+            return
+        end
+
+        Game.applyCustomBallSkin(texture, Game.parseBallId(ballMeshValue))
+        Notify("Skin da bola", "Skin aplicada!", "check")
+    end
+})
+
+VisualTab:Button({
+    Title = "Salvar skin",
+    Desc = "Guarda na lista de baixo.",
+    Icon = "save",
+
+    Callback = function()
+        local texture = Game.parseBallId(ballTextureValue)
+
+        if not texture then
+            Notify("Skin da bola", "Informe o ID da textura (números).", "info")
+            return
+        end
+
+        local name = tostring(ballNameValue):gsub("[^%w_%-]", "")
+
+        if name == "" then
+            name = "minhaskin"
+        end
+
+        local saved = Game.saveCustomBallSkin(name, texture, Game.parseBallId(ballMeshValue))
+
+        pcall(function()
+            customBallDropdown:Refresh(customBallList())
+            customBallDropdown:Select(name)
+        end)
+
+        selectedCustomBall = name
+
+        Notify(
+            "Skin da bola",
+            saved and ("Salva: " .. name) or "Não foi possível salvar no seu executor.",
+            "check"
+        )
+    end
+})
+
+customBallDropdown = VisualTab:Dropdown({
+    Title = "Minhas skins de bola",
+    Desc = "Escolha uma que você salvou",
+    Values = customBallList(),
+
+    Callback = function(value)
+        selectedCustomBall = value
+
+        local skin = Game.getCustomBallSkin(value)
+
+        if skin then
+            Game.applyCustomBallSkin(skin.Texture, skin.Mesh)
+        end
+    end
+})
+
+VisualTab:Button({
+    Title = "Apagar skin selecionada",
+    Desc = "Remove da lista.",
+    Icon = "trash-2",
+
+    Callback = function()
+        if not selectedCustomBall or not Game.deleteCustomBallSkin(selectedCustomBall) then
+            Notify("Skin da bola", "Nenhuma skin selecionada.", "info")
+            return
+        end
+
+        Notify("Skin da bola", "Apagada: " .. selectedCustomBall, "check")
+        selectedCustomBall = nil
+
+        pcall(function()
+            customBallDropdown:Refresh(customBallList())
+        end)
+    end
+})
+
+--------------------------------------------------
+-- MISC
+--------------------------------------------------
+
+MiscTab:Paragraph({
+    Title = "Ajustes Visuais",
+    Desc = "Opções de tela e câmera.",
+    Icon = "monitor",
+    IconThemed = true
+})
+
+AddSlider(MiscTab, "fov", {
+    Title = "Ajuste de FOV / Resolução",
+    Min = 10,
+    Max = 100,
+    Step = 1,
+    Default = 100,
+
+    OnChange = function(value)
+        Game.setFieldOfView(value)
+    end
+})
+
+MiscTab:Paragraph({
+    Title = "Cor do campo",
+    Desc = "Pinta o campo e o chão do mapa (só você vê).",
+    Icon = "paintbrush",
+    IconThemed = true
+})
+
+MiscTab:Colorpicker({
+    Title = "Cor do campo",
+    Default = Color3.fromRGB(0, 0, 0),
+    Value = Color3.fromRGB(0, 0, 0),
+
+    Callback = function(color)
+        Game.setFieldColor(color)
+    end
+})
+
+MiscTab:Toggle({
+    Title = "Pintar o campo",
+    Desc = "Liga para pintar, desliga para voltar às cores originais.",
+    Value = false,
+
+    Callback = function(value)
+        Game.setFieldColorEnabled(value)
+    end
+})
+
+--------------------------------------------------
+-- ATALHOS
+--------------------------------------------------
+
+HotkeysTab:Paragraph({
+    Title = "Atalhos de teclado",
+    Desc = "Clique no botão da função e aperte a tecla que você quer. Ela fica salva (use Salvar config) e liga/desliga a função. Esc cancela e Backspace remove o atalho.",
+    Icon = "keyboard",
+    IconThemed = true
+})
+
+local HotkeyFeatures = {
+    { "reach", "Reach" },
+    { "reachSphere", "Reach Sphere" },
+    { "follow", "Auto Follow" },
+    { "catch", "Auto Catch" },
+    { "predict", "Previsão da bola" },
+    { "dive", "Auto Dive" },
+    { "shield", "Shield da bola" },
+    { "hambolo", "Auto Hambolo" }
+}
+
+for _, feature in ipairs(HotkeyFeatures) do
+    local flag = feature[1]
+    local title = feature[2]
+
+    Hotkeys[flag] = "Nenhuma"
+    HotkeyTitles[flag] = title
+
+    HotkeyUI[flag] = HotkeysTab:Button({
+        Title = title,
+        Desc = "Nenhuma tecla. Clique para escolher.",
+        Icon = "keyboard",
+
+        Callback = function()
+            if Listening == flag then
+                Listening = nil
+                SetHotkey(flag, Hotkeys[flag])
+                return
+            end
+
+            if Listening then
+                SetHotkey(Listening, Hotkeys[Listening])
+            end
+
+            Listening = flag
+
+            pcall(function()
+                HotkeyUI[flag]:SetDesc("Aperte uma tecla... (Esc cancela, Backspace remove)")
+            end)
+
+            Notify("ATALHOS", "Aperte a tecla para " .. title .. ".", "keyboard")
+        end
+    })
+
+    Registry["key_" .. flag] = {
+        Get = function()
+            return Hotkeys[flag]
+        end,
+
+        Set = function(value)
+            if type(value) ~= "string" then return end
+
+            if value == "Nenhuma" then
+                SetHotkey(flag, "Nenhuma")
+                return
+            end
+
+            local valid = pcall(function()
+                return Enum.KeyCode[value]
+            end)
+
+            if valid and not BlockedKeys[value] then
+                SetHotkey(flag, value)
+            end
+        end
+    }
+end
+
+--------------------------------------------------
+-- PERSONALIZAÇÃO
+--------------------------------------------------
+
+Personalization:Paragraph({
+    Title = "Personalize sua Binarium",
+    Desc = "Aqui ficam as opções de personalização da interface.",
+    Icon = "sliders-horizontal",
+    IconThemed = true
+})
+
+Personalization:Paragraph({
+    Title = "Tamanho da interface",
+    Desc = "A janela pode ser redimensionada arrastando sua borda.",
+    Icon = "maximize",
+    IconThemed = true
+})
+
+Personalization:Paragraph({
+    Title = "Transparência",
+    Desc = "A aparência do fundo depende das opções de transparência disponíveis na configuração da janela.",
+    Icon = "blend",
+    IconThemed = true
+})
+
+Personalization:Paragraph({
+    Title = "Efeitos visuais",
+    Desc = "As opções de efeitos podem variar conforme a versão da WindUI.",
+    Icon = "sparkles",
+    IconThemed = true
+})
+
+--------------------------------------------------
+-- APARÊNCIA
+--------------------------------------------------
+
+Appearance:Paragraph({
+    Title = "Temas premium",
+    Desc = "Escolha uma das cinco identidades visuais da Binarium.",
+    Icon = "palette",
+    IconThemed = true
+})
+
+AddDropdown(Appearance, "theme", {
+    Title = "Tema da interface",
+    Desc = "Altera as cores da interface inteira.",
+    Values = ThemeNames,
+    Default = Config.Theme,
+
+    OnChange = function(value)
+        local ok, err = pcall(function()
+            WindUI:SetTheme(value)
+        end)
+
+        if ok then
+            Config.Theme = value
+            Notify("APARÊNCIA", "Tema aplicado: " .. value, "palette")
+        else
+            warn("[BINARIUM THEME]", err)
+        end
+    end
+})
+
+Appearance:Paragraph({
+    Title = "Purple Premium",
+    Desc = "O tema padrão utiliza tons escuros e detalhes roxos.",
+    Icon = "gem",
+    IconThemed = true
+})
+
+Appearance:Paragraph({
+    Title = "Outros temas",
+    Desc = "Blue, Crimson, Emerald e AMOLED.",
+    Icon = "swatch-book",
+    IconThemed = true
+})
+
+--------------------------------------------------
+-- CHANGELOG
+--------------------------------------------------
+
+Changelog:Paragraph({
+    Title = "BINARIUM 1.3.2",
+    Desc = "• Etiqueta com a versão no topo da janela",
+    Icon = "rocket",
+    IconThemed = true
+})
+
+Changelog:Paragraph({
+    Title = "BINARIUM 1.3.1",
+    Desc = "• Tela de carregamento nova, com barra de progresso e curiosidades sobre o script",
+    Icon = "rocket",
+    IconThemed = true
+})
+
+Changelog:Paragraph({
+    Title = "BINARIUM 1.3.0",
+    Desc = "• Auto Dive novo: faz o mergulho, a animação e a defesa (com Ball, Team e Tool Check)\n• Auto Hambolo\n• Shield da bola pelos remotes do jogo\n• Auto Follow com distância de parada\n• Copiar avatar, cor do campo e mais céus\n• Controles de celular (R/T, pulo, joystick e controlar bola)",
+    Icon = "rocket",
+    IconThemed = true
+})
+
+Changelog:Paragraph({
+    Title = "BINARIUM 1.2.0",
+    Desc = "• Salvar e carregar configurações (com carregamento automático)\n• Atalhos de teclado para as funções\n• Mais céus (Entardecer, Amanhecer, Noite estrelada, Neon Roxo, Neblina, Tempestade, Padrão Roblox)\n• Mais skins de bola (Neon Roxo, Ouro, Gelo, Lava, Esmeralda, Preto fosco)\n• Skins de bola personalizadas por ID\n• Removidos: Stretched Resolution, Ball Shield e Jump Power",
+    Icon = "rocket",
+    IconThemed = true
+})
+
+Changelog:Paragraph({
+    Title = "BINARIUM 1.1.0",
+    Desc = "Funções do Binarium na nova interface.\n\n• Reach e Reach Sphere\n• Auto Follow e Velocidade\n• Auto Catch, Previsão da bola e Auto Dive\n• Skybox e skyboxes personalizadas\n• Skin da bola\n• Ajuste de FOV",
+    Icon = "history",
+    IconThemed = true
+})
+
+Changelog:Paragraph({
+    Title = "BINARIUM 1.0.0",
+    Desc = "Versão inicial da interface.\n\n• Interface baseada em WindUI\n• Dashboard do jogador\n• Temas personalizados\n• Pastas expansíveis\n• Atalho personalizável\n• Configurações da interface\n• Página Sobre\n• Sistema de créditos",
+    Icon = "history",
+    IconThemed = true
+})
+
+--------------------------------------------------
+-- CONFIGURAÇÕES
+--------------------------------------------------
+
+AddToggle(Settings, "notifications", {
+    Title = "Notificações",
+    Desc = "Ativa ou desativa notificações da Binarium.",
+    Default = true,
+
+    OnChange = function(value)
+        Config.Notifications = value
+    end
+})
+
+Settings:Keybind({
+    Title = "Abrir / Fechar Binarium",
+    Desc = "Clique para escolher outra tecla.",
+    Value = "RightShift",
+    CanChange = true,
+
+    Callback = function(value)
+        local newKey
+
+        if typeof(value) == "EnumItem" then
+            newKey = value
+        elseif typeof(value) == "string" then
+            newKey = Enum.KeyCode[value]
+        end
+
+        if not newKey then return end
+
+        local ok, err = pcall(function()
+            Window:SetToggleKey(newKey)
+        end)
+
+        if not ok then
+            warn("[BINARIUM KEYBIND]", err)
+        end
+    end
+})
+
+Settings:Button({
+    Title = "Restaurar tema padrão",
+    Desc = "Volta para o Purple Premium.",
+    Icon = "rotate-ccw",
+
+    Callback = function()
+        Registry.theme.Set("Binarium Purple")
+    end
+})
+
+Settings:Paragraph({
+    Title = "Configurações salvas",
+    Desc = "Salva todas as opções do hub (reach, velocidade, atalhos, tema etc.) num arquivo.",
+    Icon = "save",
+    IconThemed = true
+})
+
+local configName = "padrao"
+
+Settings:Input({
+    Title = "Nome da config",
+    Desc = "Só letras e números",
+    Value = AutoloadName() or "padrao",
+    Placeholder = "padrao",
+
+    Callback = function(value)
+        configName = CleanName(value)
+    end
+})
+
+configName = AutoloadName() or "padrao"
+
+Settings:Button({
+    Title = "Salvar config",
+    Desc = "Salva todas as opções do hub.",
+    Icon = "save",
+
+    Callback = function()
+        local _, message = SaveConfig(configName)
+        Notify("CONFIGURAÇÕES", message, "save")
+    end
+})
+
+Settings:Button({
+    Title = "Carregar config",
+    Desc = "Aplica a config com esse nome.",
+    Icon = "folder-open",
+
+    Callback = function()
+        local _, message = LoadConfig(configName)
+        Notify("CONFIGURAÇÕES", message, "folder-open")
+    end
+})
+
+Settings:Button({
+    Title = "Apagar config",
+    Desc = "Remove a config com esse nome.",
+    Icon = "trash-2",
+
+    Callback = function()
+        local _, message = DeleteConfig(configName)
+        Notify("CONFIGURAÇÕES", message, "trash-2")
+    end
+})
+
+Settings:Button({
+    Title = "Listar configs",
+    Desc = "Mostra as configs salvas.",
+    Icon = "list",
+
+    Callback = function()
+        local names = ListConfigs()
+        local text = (#names > 0) and table.concat(names, ", ") or "Nenhuma config salva."
+
+        Notify("CONFIGS SALVAS", text, "list")
+    end
+})
+
+Settings:Toggle({
+    Title = "Carregar automaticamente",
+    Desc = "Carrega essa config ao abrir o hub.",
+    Value = AutoloadName() ~= nil,
+
+    Callback = function(value)
+        if not CanSave() then
+            Notify("CONFIGURAÇÕES", "Seu executor não suporta salvar arquivos.", "info")
+            return
+        end
+
+        pcall(function()
+            if value then
+                EnsureFolders()
+                writefile(AutoloadFile, configName)
+            elseif isfile(AutoloadFile) and delfile then
+                delfile(AutoloadFile)
+            end
+        end)
+    end
+})
+
+--------------------------------------------------
+-- SOBRE
+--------------------------------------------------
+
+About:Paragraph({
+    Title = "BINARIUM " .. Config.Version,
+    Desc = "Uma interface personalizada para Roblox, desenvolvida com foco em organização, aparência e simplicidade.",
+    Icon = "app-window",
+    IconThemed = true
+})
+
+About:Paragraph({
+    Title = "Versão",
+    Desc = Config.Version,
+    Icon = "tag",
+    IconThemed = true
+})
+
+About:Paragraph({
+    Title = "Desenvolvedor",
+    Desc = "riive3lino",
+    Icon = "code",
+    IconThemed = true
+})
+
+About:Paragraph({
+    Title = "Biblioteca",
+    Desc = "WindUI",
+    Icon = "layers",
+    IconThemed = true
+})
+
+--------------------------------------------------
+-- CRÉDITOS
+--------------------------------------------------
+
+Credits:Paragraph({
+    Title = "riive3lino",
+    Desc = "Criador e desenvolvedor do Binarium.",
+    Icon = "heart",
+    IconThemed = true
+})
+
+Credits:Paragraph({
+    Title = "Skyrovah",
+    Desc = "Contribuiu e ajudou no desenvolvimento.",
+    Icon = "heart",
+    IconThemed = true
+})
+
+Credits:Paragraph({
+    Title = "WindUI",
+    Desc = "Biblioteca utilizada para construir os componentes da interface.",
+    Icon = "layers",
+    IconThemed = true
+})
+
+--------------------------------------------------
+-- FINALIZAÇÃO
+--------------------------------------------------
+
+Notify(
+    "BINARIUM " .. Config.Version,
+    "Interface carregada. Bem-vindo!",
+    "sparkles"
 )
 
-local function SetReachDist(val)
-    ReachDistance = val
+task.spawn(function()
+    task.wait(0.5)
 
-    if ReachEnabled then
-        ReachToggleBtn.Text = "   Reach: ON (" .. val .. "m)"
+    local name = AutoloadName()
+
+    if name then
+        local ok, message = LoadConfig(name)
+        Notify("CONFIGURAÇÕES", ok and ("Carregada automaticamente: " .. name) or message, "folder-open")
     end
-end
-
-AddOptionButton(PageReach, "Alcance: 2.0 Metros", function()
-    SetReachDist(2.0)
-end, 94)
-
-AddOptionButton(PageReach, "Alcance: 3.5 Metros", function()
-    SetReachDist(3.5)
-end, 134)
-
-AddOptionButton(PageReach, "Alcance: 5.0 Metros", function()
-    SetReachDist(5.0)
-end, 174)
-
-AddOptionButton(PageReach, "Alcance: 7.5 Metros", function()
-    SetReachDist(7.5)
-end, 214)
-
-AddOptionButton(PageReach, "Alcance: 10.0 Metros", function()
-    SetReachDist(10.0)
-end, 254)
-
--- BOLA
-AddOptionButton(PageBall, "Cor da Bola: Vermelho Neon", function()
-    local ball = GetClosestBall()
-    if ball then
-        ball.Color = Color3.fromRGB(255, 40, 40)
-        ball.Material = Enum.Material.Neon
-    end
-end, 52)
-
-AddOptionButton(PageBall, "Cor da Bola: Azul Cyan", function()
-    local ball = GetClosestBall()
-    if ball then
-        ball.Color = Color3.fromRGB(0, 230, 255)
-        ball.Material = Enum.Material.Neon
-    end
-end, 94)
-
-AddOptionButton(PageBall, "Efeito Fogo: TOGGLE", function(btn)
-    local ball = GetClosestBall()
-
-    if ball then
-        local fire = ball:FindFirstChildOfClass("Fire")
-
-        if fire then
-            fire:Destroy()
-            btn.Text = "   Efeito Fogo: OFF"
-        else
-            local newFire = Instance.new("Fire")
-            newFire.Size = 6
-            newFire.Parent = ball
-            btn.Text = "   Efeito Fogo: ON"
-        end
-    end
-end, 136)
-
--- GRAMADO
-AddOptionButton(PageGrass, "Gramado: Verde Dark", function()
-    ApplyGrassColor(Color3.fromRGB(15, 75, 30))
-end, 52)
-
-AddOptionButton(PageGrass, "Gramado: Preto Total", function()
-    ApplyGrassColor(Color3.fromRGB(18, 18, 22))
-end, 94)
-
-AddOptionButton(PageGrass, "Gramado: Roxo Cyber", function()
-    ApplyGrassColor(Color3.fromRGB(80, 20, 120))
-end, 136)
-
-AddOptionButton(PageGrass, "Gramado: Azul Midnight", function()
-    ApplyGrassColor(Color3.fromRGB(15, 35, 85))
-end, 178)
-
--- ANTI-LAG
-AddOptionButton(PageAntiLag, "Remover Sombras do Mapa", function(btn, stroke)
-    Lighting.GlobalShadows = false
-    Lighting.FogEnd = 9e9
-
-    btn.Text = "   Sombras: DESATIVADAS"
-    btn.TextColor3 = WHITE
-    stroke.Color = WHITE
-end, 52)
-
-AddOptionButton(PageAntiLag, "Remover Efeitos do Mapa", function(btn, stroke)
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter")
-        or v:IsA("Fire")
-        or v:IsA("Smoke")
-        or v:IsA("Sparkles") then
-            v:Destroy()
-        end
-    end
-
-    btn.Text = "   Efeitos: REMOVIDOS"
-    btn.TextColor3 = WHITE
-    stroke.Color = WHITE
-end, 94)
-
-AddOptionButton(PageAntiLag, "Texturas Lisas (FPS Boost)", function(btn, stroke)
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("BasePart") and not v:IsDescendantOf(Players) then
-            v.Material = Enum.Material.SmoothPlastic
-        end
-    end
-
-    btn.Text = "   Texturas: LISAS"
-    btn.TextColor3 = WHITE
-    stroke.Color = WHITE
-end, 136)
-
--- BOTÃO FLUTUANTE PARA ABRIR O HUB
-local OpenHubBtn = Instance.new("TextButton")
-OpenHubBtn.Name = "OpenHubBtn"
-OpenHubBtn.Parent = ScreenGui
-OpenHubBtn.BackgroundColor3 = BLACK
-OpenHubBtn.Position = UDim2.new(0, 20, 0.5, -22)
-OpenHubBtn.Size = UDim2.new(0, 48, 0, 48)
-OpenHubBtn.Font = Enum.Font.GothamBold
-OpenHubBtn.Text = "B"
-OpenHubBtn.TextColor3 = WHITE
-OpenHubBtn.TextSize = 20
-OpenHubBtn.AutoButtonColor = false
-
-local OpenCorner = Instance.new("UICorner", OpenHubBtn)
-OpenCorner.CornerRadius = UDim.new(1, 0)
-
-local OpenStroke = Instance.new("UIStroke", OpenHubBtn)
-OpenStroke.Color = WHITE
-OpenStroke.Thickness = 1.3
-
-MakeDraggable(OpenHubBtn)
-
-OpenHubBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-
-    TweenService:Create(
-        MainStroke,
-        TweenInfo.new(0.2),
-        {Transparency = MainFrame.Visible and 0 or 0.5}
-    ):Play()
 end)
 
--- INICIALIZAÇÃO
-ShowPage("Auto Follow")
-UpdateFollowButton()
+Loading.Finish()
 
+print("[BINARIUM] Binarium " .. Config.Version .. " carregada com sucesso.")
+
+end
+
+--------------------------------------------------
+-- EXECUÇÃO
+--------------------------------------------------
+
+local function showError(msg)
+	warn("[Binarium] " .. tostring(msg))
+	pcall(function()
+		local g = Instance.new("ScreenGui")
+		g.Name = "BinariumError"
+		g.ResetOnSpawn = false
+		g.DisplayOrder = 1000000
+		g.Parent = (gethui and gethui()) or CoreGui
+
+		local l = Instance.new("TextLabel")
+		l.Size = UDim2.new(0.9, 0, 0, 170)
+		l.Position = UDim2.new(0.05, 0, 0.05, 0)
+		l.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		l.TextColor3 = Color3.fromRGB(255, 255, 255)  -- TEXTO BRANCO
+		l.TextWrapped = true
+		l.TextXAlignment = Enum.TextXAlignment.Left
+		l.TextYAlignment = Enum.TextYAlignment.Top
+		l.TextSize = 12
+		l.Font = Enum.Font.Code
+		l.Text = "[Binarium] Erro (copiado para a área de transferência):\n" .. tostring(msg)
+		l.Parent = g
+
+		if setclipboard then setclipboard(tostring(msg)) end
+		task.delay(40, function() g:Destroy() end)
+	end)
+end
+
+local function runScript()
+	task.spawn(function()
+		local okRun, runErr = xpcall(runHub, function(e)
+			return tostring(e) .. "\n" .. tostring(debug.traceback())
+		end)
+
+		if not okRun then
+			showError(runErr)
+		end
+	end)
+end
+
+runScript()
