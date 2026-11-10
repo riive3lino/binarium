@@ -296,140 +296,152 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+
 -- ====================================================================
--- 6. INTERFACE DESIGN (binarium HUB)
+-- 6. BINARIUM BLACK & WHITE UI
 -- ====================================================================
 
--- BOTÃO FLUTUANTE
+local WHITE = Color3.fromRGB(245, 245, 245)
+local BLACK = Color3.fromRGB(8, 8, 8)
+local PANEL = Color3.fromRGB(17, 17, 17)
+local CARD = Color3.fromRGB(25, 25, 25)
+local MUTED = Color3.fromRGB(135, 135, 135)
+local BORDER = Color3.fromRGB(43, 43, 43)
+
+-- BOTÃO FLUTUANTE FOLLOW
 local FloatButton = Instance.new("TextButton")
-local FloatCorner = Instance.new("UICorner")
-local FloatStroke = Instance.new("UIStroke")
-
 FloatButton.Name = "AutoBallFloatBtn"
 FloatButton.Parent = ScreenGui
-FloatButton.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-FloatButton.Position = UDim2.new(0.85, 0, 0.2, 0)
-FloatButton.Size = UDim2.new(0, 110, 0, 38)
+FloatButton.BackgroundColor3 = BLACK
+FloatButton.Position = UDim2.new(0.84, 0, 0.2, 0)
+FloatButton.Size = UDim2.new(0, 115, 0, 38)
 FloatButton.Font = Enum.Font.GothamBold
-FloatButton.Text = "FOLLOW: OFF"
-FloatButton.TextColor3 = Color3.fromRGB(220, 60, 60)
-FloatButton.TextSize = 12
+FloatButton.Text = "FOLLOW  OFF"
+FloatButton.TextColor3 = MUTED
+FloatButton.TextSize = 11
+FloatButton.AutoButtonColor = false
 
-FloatCorner.CornerRadius = UDim.new(0, 8)
-FloatCorner.Parent = FloatButton
+local FloatCorner = Instance.new("UICorner", FloatButton)
+FloatCorner.CornerRadius = UDim.new(0, 9)
 
-FloatStroke.Color = Color3.fromRGB(220, 60, 60)
-FloatStroke.Thickness = 1.5
-FloatStroke.Parent = FloatButton
+local FloatStroke = Instance.new("UIStroke", FloatButton)
+FloatStroke.Color = BORDER
+FloatStroke.Thickness = 1.3
 
 MakeDraggable(FloatButton)
 
+local function UpdateFollowButton()
+    if AutoFollowEnabled then
+        FloatButton.Text = "FOLLOW  ON"
+        FloatButton.TextColor3 = WHITE
+        FloatStroke.Color = WHITE
+    else
+        FloatButton.Text = "FOLLOW  OFF"
+        FloatButton.TextColor3 = MUTED
+        FloatStroke.Color = BORDER
+    end
+end
+
 FloatButton.MouseButton1Click:Connect(function()
     AutoFollowEnabled = not AutoFollowEnabled
-    if AutoFollowEnabled then
-        FloatButton.Text = "FOLLOW: ON"
-        FloatButton.TextColor3 = Color3.fromRGB(60, 220, 100)
-        FloatStroke.Color = Color3.fromRGB(60, 220, 100)
-    else
-        FloatButton.Text = "FOLLOW: OFF"
-        FloatButton.TextColor3 = Color3.fromRGB(220, 60, 60)
-        FloatStroke.Color = Color3.fromRGB(220, 60, 60)
-    end
+    UpdateFollowButton()
 end)
 
--- PAINEL PRINCIPAL
+-- JANELA PRINCIPAL
 local MainFrame = Instance.new("Frame")
-local MainCorner = Instance.new("UICorner")
-local MainStroke = Instance.new("UIStroke")
-local TitleBar = Instance.new("TextLabel")
-local AuthorLabel = Instance.new("TextLabel")
-
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 14)
-MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
-MainFrame.Size = UDim2.new(0, 400, 0, 270)
-MainFrame.ClipsDescendants = true
+MainFrame.BackgroundColor3 = BLACK
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -190)
+MainFrame.Size = UDim2.new(0, 520, 0, 380)
 MainFrame.Visible = false
+MainFrame.ClipsDescendants = true
 
+local MainCorner = Instance.new("UICorner", MainFrame)
 MainCorner.CornerRadius = UDim.new(0, 12)
-MainCorner.Parent = MainFrame
 
-MainStroke.Color = Color3.fromRGB(35, 35, 42)
-MainStroke.Thickness = 1.5
-MainStroke.Parent = MainFrame
-
-TitleBar.Name = "TitleBar"
-TitleBar.Parent = MainFrame
-TitleBar.BackgroundTransparency = 1
-TitleBar.Position = UDim2.new(0, 15, 0, 8)
-TitleBar.Size = UDim2.new(1, -30, 0, 25)
-TitleBar.Font = Enum.Font.GothamBold
-TitleBar.Text = "BINARIUM HUB"
-TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleBar.TextSize = 15
-TitleBar.TextXAlignment = Enum.TextXAlignment.Left
-
-AuthorLabel.Parent = MainFrame
-AuthorLabel.BackgroundTransparency = 1
-AuthorLabel.Position = UDim2.new(0, 15, 0, 26)
-AuthorLabel.Size = UDim2.new(1, -30, 0, 15)
-AuthorLabel.Font = Enum.Font.Gotham
-AuthorLabel.Text = "by @7zhc"
-AuthorLabel.TextColor3 = Color3.fromRGB(100, 100, 115)
-AuthorLabel.TextSize = 10
-AuthorLabel.TextXAlignment = Enum.TextXAlignment.Left
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = BORDER
+MainStroke.Thickness = 1.3
 
 MakeDraggable(MainFrame)
 
--- MENU LATERAL
+-- HEADER
+local Header = Instance.new("Frame")
+Header.Parent = MainFrame
+Header.BackgroundColor3 = PANEL
+Header.Size = UDim2.new(1, 0, 0, 65)
+
+local HeaderCorner = Instance.new("UICorner", Header)
+HeaderCorner.CornerRadius = UDim.new(0, 12)
+
+local HeaderTitle = Instance.new("TextLabel")
+HeaderTitle.Parent = Header
+HeaderTitle.BackgroundTransparency = 1
+HeaderTitle.Position = UDim2.new(0, 18, 0, 9)
+HeaderTitle.Size = UDim2.new(0, 250, 0, 25)
+HeaderTitle.Font = Enum.Font.GothamBold
+HeaderTitle.Text = "BINARIUM"
+HeaderTitle.TextColor3 = WHITE
+HeaderTitle.TextSize = 19
+HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local HeaderSubtitle = Instance.new("TextLabel")
+HeaderSubtitle.Parent = Header
+HeaderSubtitle.BackgroundTransparency = 1
+HeaderSubtitle.Position = UDim2.new(0, 19, 0, 34)
+HeaderSubtitle.Size = UDim2.new(0, 250, 0, 16)
+HeaderSubtitle.Font = Enum.Font.Gotham
+HeaderSubtitle.Text = "TCs Edition  •  by @7zhc"
+HeaderSubtitle.TextColor3 = MUTED
+HeaderSubtitle.TextSize = 10
+HeaderSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local Status = Instance.new("TextLabel")
+Status.Parent = Header
+Status.BackgroundTransparency = 1
+Status.Position = UDim2.new(1, -105, 0, 20)
+Status.Size = UDim2.new(0, 85, 0, 22)
+Status.Font = Enum.Font.GothamBold
+Status.Text = "● ONLINE"
+Status.TextColor3 = WHITE
+Status.TextSize = 10
+
+-- SIDEBAR
 local Sidebar = Instance.new("Frame")
 Sidebar.Parent = MainFrame
-Sidebar.BackgroundTransparency = 1
-Sidebar.Position = UDim2.new(0, 10, 0, 50)
-Sidebar.Size = UDim2.new(0, 100, 1, -60)
+Sidebar.BackgroundColor3 = PANEL
+Sidebar.Position = UDim2.new(0, 0, 0, 65)
+Sidebar.Size = UDim2.new(0, 125, 1, -65)
 
+local SidebarLine = Instance.new("Frame")
+SidebarLine.Parent = Sidebar
+SidebarLine.BackgroundColor3 = BORDER
+SidebarLine.BorderSizePixel = 0
+SidebarLine.Position = UDim2.new(1, -1, 0, 0)
+SidebarLine.Size = UDim2.new(0, 1, 1, 0)
+
+-- CONTEÚDO
 local Container = Instance.new("Frame")
 Container.Parent = MainFrame
 Container.BackgroundTransparency = 1
-Container.Position = UDim2.new(0, 115, 0, 50)
-Container.Size = UDim2.new(1, -125, 1, -60)
-
-local function CreateTabButton(name, posOrder)
-    local btn = Instance.new("TextButton")
-    btn.Parent = Sidebar
-    btn.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-    btn.Position = UDim2.new(0, 0, 0, (posOrder - 1) * 32)
-    btn.Size = UDim2.new(1, 0, 0, 26)
-    btn.Font = Enum.Font.GothamMedium
-    btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(160, 160, 175)
-    btn.TextSize = 11
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-    
-    return btn
-end
-
-local TabFollow = CreateTabButton("Auto Follow", 1)
-local TabReach = CreateTabButton("Reach", 2)
-local TabBall = CreateTabButton("Bola", 3)
-local TabGrass = CreateTabButton("Gramado", 4)
-local TabAntiLag = CreateTabButton("Anti-Lag", 5)
+Container.Position = UDim2.new(0, 140, 0, 80)
+Container.Size = UDim2.new(1, -155, 1, -95)
 
 -- PÁGINAS
 local Pages = {}
+
 local function CreatePage(name)
     local page = Instance.new("ScrollingFrame")
     page.Name = name
     page.Parent = Container
     page.Size = UDim2.new(1, 0, 1, 0)
     page.BackgroundTransparency = 1
+    page.BorderSizePixel = 0
     page.Visible = false
     page.ScrollBarThickness = 2
-    page.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 60)
+    page.ScrollBarImageColor3 = WHITE
+    page.CanvasSize = UDim2.new(0, 0, 0, 230)
     Pages[name] = page
     return page
 end
@@ -440,175 +452,307 @@ local PageBall = CreatePage("Bola")
 local PageGrass = CreatePage("Gramado")
 local PageAntiLag = CreatePage("Anti-Lag")
 
-PageFollow.Visible = true
+-- ABAS
+local Tabs = {}
 
-local function ShowPage(pageName)
-    for name, page in pairs(Pages) do
-        page.Visible = (name == pageName)
-    end
-end
-
-TabFollow.MouseButton1Click:Connect(function() ShowPage("Auto Follow") end)
-TabReach.MouseButton1Click:Connect(function() ShowPage("Reach") end)
-TabBall.MouseButton1Click:Connect(function() ShowPage("Bola") end)
-TabGrass.MouseButton1Click:Connect(function() ShowPage("Gramado") end)
-TabAntiLag.MouseButton1Click:Connect(function() ShowPage("Anti-Lag") end)
-
--- HELPER DE BOTÕES
-local function AddOptionButton(page, text, callback, yOffset)
+local function CreateTab(name, icon, order)
     local btn = Instance.new("TextButton")
-    btn.Parent = page
-    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
-    btn.Position = UDim2.new(0, 0, 0, yOffset)
-    btn.Size = UDim2.new(1, -5, 0, 28)
-    btn.Font = Enum.Font.Gotham
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(220, 220, 230)
-    btn.TextSize = 11
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-    
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(35, 35, 45)
-    stroke.Thickness = 1
-    stroke.Parent = btn
+    btn.Parent = Sidebar
+    btn.BackgroundColor3 = PANEL
+    btn.Position = UDim2.new(0, 9, 0, 15 + ((order - 1) * 42))
+    btn.Size = UDim2.new(1, -18, 0, 34)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = icon .. "   " .. name
+    btn.TextColor3 = MUTED
+    btn.TextSize = 10
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.AutoButtonColor = false
 
-    btn.MouseButton1Click:Connect(function() callback(btn, stroke) end)
+    local padding = Instance.new("UIPadding", btn)
+    padding.PaddingLeft = UDim.new(0, 9)
+
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0, 7)
+
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color = BORDER
+    stroke.Thickness = 1
+    stroke.Enabled = false
+
+    Tabs[name] = {
+        Button = btn,
+        Stroke = stroke
+    }
+
     return btn
 end
 
--- ====================================================================
--- OPÇÕES DO HUB
--- ====================================================================
+local TabFollow = CreateTab("Follow", "01", 1)
+local TabReach = CreateTab("Reach", "02", 2)
+local TabBall = CreateTab("Bola", "03", 3)
+local TabGrass = CreateTab("Gramado", "04", 4)
+local TabAntiLag = CreateTab("Anti-Lag", "05", 5)
 
--- 1. AUTO FOLLOW
+local function ShowPage(pageName)
+    for name, page in pairs(Pages) do
+        page.Visible = name == pageName
+    end
+
+    local tabNames = {
+        ["Auto Follow"] = "Follow",
+        ["Reach"] = "Reach",
+        ["Bola"] = "Bola",
+        ["Gramado"] = "Gramado",
+        ["Anti-Lag"] = "Anti-Lag"
+    }
+
+    for name, data in pairs(Tabs) do
+        local selected = name == tabNames[pageName]
+
+        data.Button.BackgroundColor3 = selected and CARD or PANEL
+        data.Button.TextColor3 = selected and WHITE or MUTED
+        data.Stroke.Enabled = selected
+        data.Stroke.Color = WHITE
+    end
+end
+
+TabFollow.MouseButton1Click:Connect(function()
+    ShowPage("Auto Follow")
+end)
+
+TabReach.MouseButton1Click:Connect(function()
+    ShowPage("Reach")
+end)
+
+TabBall.MouseButton1Click:Connect(function()
+    ShowPage("Bola")
+end)
+
+TabGrass.MouseButton1Click:Connect(function()
+    ShowPage("Gramado")
+end)
+
+TabAntiLag.MouseButton1Click:Connect(function()
+    ShowPage("Anti-Lag")
+end)
+
+-- TÍTULOS DAS PÁGINAS
+local function AddSection(page, title, subtitle)
+    local label = Instance.new("TextLabel")
+    label.Parent = page
+    label.BackgroundTransparency = 1
+    label.Position = UDim2.new(0, 2, 0, 0)
+    label.Size = UDim2.new(1, -5, 0, 42)
+    label.Font = Enum.Font.GothamBold
+    label.Text = title .. "\n" .. subtitle
+    label.TextColor3 = WHITE
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextYAlignment = Enum.TextYAlignment.Top
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = BORDER
+    stroke.Thickness = 1
+end
+
+AddSection(PageFollow, "Auto Follow", "Controle automático de movimento")
+AddSection(PageReach, "Reach Settings", "Configure o alcance")
+AddSection(PageBall, "Ball Customization", "Personalize a bola")
+AddSection(PageGrass, "Field Appearance", "Personalize o gramado")
+AddSection(PageAntiLag, "Performance", "Otimizações visuais")
+
+-- BOTÕES DAS OPÇÕES
+local function AddOptionButton(page, text, callback, yOffset)
+    local btn = Instance.new("TextButton")
+    btn.Parent = page
+    btn.BackgroundColor3 = CARD
+    btn.Position = UDim2.new(0, 0, 0, yOffset)
+    btn.Size = UDim2.new(1, -5, 0, 34)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = "   " .. text
+    btn.TextColor3 = WHITE
+    btn.TextSize = 10
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.AutoButtonColor = false
+
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0, 7)
+
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color = BORDER
+    stroke.Thickness = 1
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {
+            BackgroundColor3 = Color3.fromRGB(38, 38, 38)
+        }):Play()
+    end)
+
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {
+            BackgroundColor3 = CARD
+        }):Play()
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        callback(btn, stroke)
+    end)
+
+    return btn
+end
+
+-- FOLLOW
 AddOptionButton(PageFollow, "Botão Flutuante: VISÍVEL", function(btn)
     FloatButton.Visible = not FloatButton.Visible
-    btn.Text = FloatButton.Visible and "Botão Flutuante: VISÍVEL" or "Botão Flutuante: OCULTO"
-end, 0)
+    btn.Text = FloatButton.Visible
+        and "   Botão Flutuante: VISÍVEL"
+        or "   Botão Flutuante: OCULTO"
+end, 52)
 
 local InfoLabel = Instance.new("TextLabel")
 InfoLabel.Parent = PageFollow
-InfoLabel.BackgroundTransparency = 1
-InfoLabel.Position = UDim2.new(0, 0, 0, 32)
-InfoLabel.Size = UDim2.new(1, -5, 0, 30)
+InfoLabel.BackgroundColor3 = CARD
+InfoLabel.Position = UDim2.new(0, 0, 0, 94)
+InfoLabel.Size = UDim2.new(1, -5, 0, 48)
 InfoLabel.Font = Enum.Font.Gotham
-InfoLabel.Text = "💡 Mexer o analógico/WASD desativa o AutoFollow na hora para fazer drible/lambreta!"
-InfoLabel.TextColor3 = Color3.fromRGB(60, 220, 100)
-InfoLabel.TextSize = 9
+InfoLabel.Text = "O movimento manual interrompe o acompanhamento."
+InfoLabel.TextColor3 = MUTED
+InfoLabel.TextSize = 10
 InfoLabel.TextWrapped = true
 
-AddOptionButton(PageFollow, "Distância: Colado (1.5m)", function() FollowDistance = 1.5 end, 68)
-AddOptionButton(PageFollow, "Distância: Médio (1.8m)", function() FollowDistance = 1.8 end, 100)
-AddOptionButton(PageFollow, "Distância: Longo (2.2m)", function() FollowDistance = 2.2 end, 132)
+local InfoCorner = Instance.new("UICorner", InfoLabel)
+InfoCorner.CornerRadius = UDim.new(0, 7)
 
--- 2. REACH
-local ReachToggleBtn = AddOptionButton(PageReach, "Status do Reach: OFF", function(btn, stroke)
-    ReachEnabled = not ReachEnabled
-    if ReachEnabled then
-        btn.Text = "Status do Reach: ON (" .. ReachDistance .. "m)"
-        btn.TextColor3 = Color3.fromRGB(60, 220, 100)
-        stroke.Color = Color3.fromRGB(60, 220, 100)
-    else
-        btn.Text = "Status do Reach: OFF"
-        btn.TextColor3 = Color3.fromRGB(220, 220, 230)
-        stroke.Color = Color3.fromRGB(35, 35, 45)
-    end
-end, 0)
+AddOptionButton(PageFollow, "Distância: Colado (1.5m)", function()
+    FollowDistance = 1.5
+end, 151)
+
+AddOptionButton(PageFollow, "Distância: Médio (1.8m)", function()
+    FollowDistance = 1.8
+end, 191)
+
+AddOptionButton(PageFollow, "Distância: Longo (2.2m)", function()
+    FollowDistance = 2.2
+end, 231)
+
+-- REACH
+local ReachToggleBtn = AddOptionButton(
+    PageReach,
+    "   Reach: OFF",
+    function(btn, stroke)
+        ReachEnabled = not ReachEnabled
+
+        btn.Text = ReachEnabled and "   Reach: ON" or "   Reach: OFF"
+        btn.TextColor3 = ReachEnabled and WHITE or MUTED
+        stroke.Color = ReachEnabled and WHITE or BORDER
+    end,
+    52
+)
 
 local function SetReachDist(val)
     ReachDistance = val
-    if ReachEnabled then ReachToggleBtn.Text = "Status do Reach: ON (" .. val .. "m)" end
+
+    if ReachEnabled then
+        ReachToggleBtn.Text = "   Reach: ON (" .. val .. "m)"
+    end
 end
 
-AddOptionButton(PageReach, "Alcance: 2.0 Metros", function() SetReachDist(2.0) end, 32)
-AddOptionButton(PageReach, "Alcance: 3.5 Metros", function() SetReachDist(3.5) end, 64)
-AddOptionButton(PageReach, "Alcance: 5.0 Metros", function() SetReachDist(5.0) end, 96)
-AddOptionButton(PageReach, "Alcance: 7.5 Metros", function() SetReachDist(7.5) end, 128)
-AddOptionButton(PageReach, "Alcance: 10.0 Metros", function() SetReachDist(10.0) end, 160)
+AddOptionButton(PageReach, "Alcance: 2.0 Metros", function()
+    SetReachDist(2.0)
+end, 94)
 
--- 3. BOLA
+AddOptionButton(PageReach, "Alcance: 3.5 Metros", function()
+    SetReachDist(3.5)
+end, 134)
+
+AddOptionButton(PageReach, "Alcance: 5.0 Metros", function()
+    SetReachDist(5.0)
+end, 174)
+
+AddOptionButton(PageReach, "Alcance: 7.5 Metros", function()
+    SetReachDist(7.5)
+end, 214)
+
+AddOptionButton(PageReach, "Alcance: 10.0 Metros", function()
+    SetReachDist(10.0)
+end, 254)
+
+-- BOLA
 AddOptionButton(PageBall, "Cor da Bola: Vermelho Neon", function()
     local ball = GetClosestBall()
-    if ball then 
+    if ball then
         ball.Color = Color3.fromRGB(255, 40, 40)
         ball.Material = Enum.Material.Neon
     end
-end, 0)
+end, 52)
 
 AddOptionButton(PageBall, "Cor da Bola: Azul Cyan", function()
     local ball = GetClosestBall()
-    if ball then 
+    if ball then
         ball.Color = Color3.fromRGB(0, 230, 255)
         ball.Material = Enum.Material.Neon
     end
-end, 32)
+end, 94)
 
 AddOptionButton(PageBall, "Efeito Fogo: TOGGLE", function(btn)
     local ball = GetClosestBall()
+
     if ball then
         local fire = ball:FindFirstChildOfClass("Fire")
+
         if fire then
             fire:Destroy()
-            btn.Text = "Efeito Fogo: OFF"
+            btn.Text = "   Efeito Fogo: OFF"
         else
             local newFire = Instance.new("Fire")
             newFire.Size = 6
             newFire.Parent = ball
-            btn.Text = "Efeito Fogo: ON"
+            btn.Text = "   Efeito Fogo: ON"
         end
     end
-end, 64)
+end, 136)
 
--- 4. GRAMADO
-local ModifiedGrassParts = {}
+-- GRAMADO
+AddOptionButton(PageGrass, "Gramado: Verde Dark", function()
+    ApplyGrassColor(Color3.fromRGB(15, 75, 30))
+end, 52)
 
-local function ApplyGrassColor(color)
-    for _, part in ipairs(workspace:GetDescendants()) do
-        if part:IsA("BasePart") then
-            local isCharacter = part:IsDescendantOf(Players) or (part.Parent and part.Parent:FindFirstChildOfClass("Humanoid"))
-            if not isCharacter then
-                local n = part.Name:lower()
-                local isLine = n:find("line") or n:find("linha") or n:find("white") or part.Transparency > 0.4
-                
-                if not isLine then
-                    if ModifiedGrassParts[part] or n:find("grass") or n:find("pitch") or n:find("campo") or n:find("field") or n:find("out") or n:find("wedge") or n:find("stadium") or n:find("floor") or (part.Position.Y < 5 and part.Size.X > 8) then
-                        part.Color = color
-                        part.Material = Enum.Material.SmoothPlastic
-                        ModifiedGrassParts[part] = true
-                    end
-                end
-            end
-        end
-    end
-end
+AddOptionButton(PageGrass, "Gramado: Preto Total", function()
+    ApplyGrassColor(Color3.fromRGB(18, 18, 22))
+end, 94)
 
-AddOptionButton(PageGrass, "Gramado: Verde Dark", function() ApplyGrassColor(Color3.fromRGB(15, 75, 30)) end, 0)
-AddOptionButton(PageGrass, "Gramado: Mod Preto Total", function() ApplyGrassColor(Color3.fromRGB(18, 18, 22)) end, 32)
-AddOptionButton(PageGrass, "Gramado: Roxo Cyber", function() ApplyGrassColor(Color3.fromRGB(80, 20, 120)) end, 64)
-AddOptionButton(PageGrass, "Gramado: Azul Midnight", function() ApplyGrassColor(Color3.fromRGB(15, 35, 85)) end, 96)
+AddOptionButton(PageGrass, "Gramado: Roxo Cyber", function()
+    ApplyGrassColor(Color3.fromRGB(80, 20, 120))
+end, 136)
 
--- 5. ANTI-LAG
+AddOptionButton(PageGrass, "Gramado: Azul Midnight", function()
+    ApplyGrassColor(Color3.fromRGB(15, 35, 85))
+end, 178)
+
+-- ANTI-LAG
 AddOptionButton(PageAntiLag, "Remover Sombras do Mapa", function(btn, stroke)
     Lighting.GlobalShadows = false
     Lighting.FogEnd = 9e9
-    btn.Text = "Sombras: DESATIVADAS"
-    btn.TextColor3 = Color3.fromRGB(60, 220, 100)
-    stroke.Color = Color3.fromRGB(60, 220, 100)
-end, 0)
+
+    btn.Text = "   Sombras: DESATIVADAS"
+    btn.TextColor3 = WHITE
+    stroke.Color = WHITE
+end, 52)
 
 AddOptionButton(PageAntiLag, "Remover Efeitos do Mapa", function(btn, stroke)
     for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
+        if v:IsA("ParticleEmitter")
+        or v:IsA("Fire")
+        or v:IsA("Smoke")
+        or v:IsA("Sparkles") then
             v:Destroy()
         end
     end
-    btn.Text = "Efeitos: REMOVIDOS"
-    btn.TextColor3 = Color3.fromRGB(60, 220, 100)
-    stroke.Color = Color3.fromRGB(60, 220, 100)
-end, 32)
+
+    btn.Text = "   Efeitos: REMOVIDOS"
+    btn.TextColor3 = WHITE
+    stroke.Color = WHITE
+end, 94)
 
 AddOptionButton(PageAntiLag, "Texturas Lisas (FPS Boost)", function(btn, stroke)
     for _, v in ipairs(workspace:GetDescendants()) do
@@ -616,35 +760,45 @@ AddOptionButton(PageAntiLag, "Texturas Lisas (FPS Boost)", function(btn, stroke)
             v.Material = Enum.Material.SmoothPlastic
         end
     end
-    btn.Text = "Texturas: LISAS"
-    btn.TextColor3 = Color3.fromRGB(60, 220, 100)
-    stroke.Color = Color3.fromRGB(60, 220, 100)
-end, 64)
 
--- BOTÃO ABRIR/FECHAR HUB
+    btn.Text = "   Texturas: LISAS"
+    btn.TextColor3 = WHITE
+    stroke.Color = WHITE
+end, 136)
+
+-- BOTÃO FLUTUANTE PARA ABRIR O HUB
 local OpenHubBtn = Instance.new("TextButton")
-local OpenCorner = Instance.new("UICorner")
-local OpenStroke = Instance.new("UIStroke")
-
 OpenHubBtn.Name = "OpenHubBtn"
 OpenHubBtn.Parent = ScreenGui
-OpenHubBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+OpenHubBtn.BackgroundColor3 = BLACK
 OpenHubBtn.Position = UDim2.new(0, 20, 0.5, -22)
-OpenHubBtn.Size = UDim2.new(0, 45, 0, 45)
+OpenHubBtn.Size = UDim2.new(0, 48, 0, 48)
 OpenHubBtn.Font = Enum.Font.GothamBold
-OpenHubBtn.Text = "BINARIUM"
-OpenHubBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-OpenHubBtn.TextSize = 10
+OpenHubBtn.Text = "B"
+OpenHubBtn.TextColor3 = WHITE
+OpenHubBtn.TextSize = 20
+OpenHubBtn.AutoButtonColor = false
 
+local OpenCorner = Instance.new("UICorner", OpenHubBtn)
 OpenCorner.CornerRadius = UDim.new(1, 0)
-OpenCorner.Parent = OpenHubBtn
 
-OpenStroke.Color = Color3.fromRGB(60, 60, 75)
-OpenStroke.Thickness = 1.5
-OpenStroke.Parent = OpenHubBtn
+local OpenStroke = Instance.new("UIStroke", OpenHubBtn)
+OpenStroke.Color = WHITE
+OpenStroke.Thickness = 1.3
 
 MakeDraggable(OpenHubBtn)
 
 OpenHubBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
+
+    TweenService:Create(
+        MainStroke,
+        TweenInfo.new(0.2),
+        {Transparency = MainFrame.Visible and 0 or 0.5}
+    ):Play()
 end)
+
+-- INICIALIZAÇÃO
+ShowPage("Auto Follow")
+UpdateFollowButton()
+
